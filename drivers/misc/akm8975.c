@@ -225,12 +225,13 @@ static int akm_aot_release(struct inode *inode, struct file *file)
 static int akm_aot_ioctl(struct inode *inode, struct file *file,
 	      unsigned int cmd, unsigned long arg)
 {
-	void __user *argp = (void __user *) arg;
+printk("akm_aot_ioctl 000 0x%x\n", cmd);
+	void __user *argp = (void __user *) arg; // problem?
 	short flag;
 	struct akm8975_data *akm = file->private_data;
-
+printk("akm_aot_ioctl 001\n");
 	FUNCDBG("called");
-
+printk("akm_aot_ioctl 002\n");
 	switch (cmd) {
 	case ECS_IOCTL_APP_SET_MFLAG:
 	case ECS_IOCTL_APP_SET_AFLAG:
@@ -247,8 +248,8 @@ static int akm_aot_ioctl(struct inode *inode, struct file *file,
 	default:
 		break;
 	}
-
-	mutex_lock(&akm->flags_lock);
+printk("akm_aot_ioctl 003\n");
+/*	mutex_lock(&akm->flags_lock);*/
 	switch (cmd) {
 	case ECS_IOCTL_APP_SET_MFLAG:
 	  m_flag = flag;
@@ -277,8 +278,8 @@ static int akm_aot_ioctl(struct inode *inode, struct file *file,
 	default:
 		return -ENOTTY;
 	}
-	mutex_unlock(&akm->flags_lock);
-
+/*	mutex_unlock(&akm->flags_lock);*/
+printk("akm_aot_ioctl 004\n");
 	switch (cmd) {
 	case ECS_IOCTL_APP_GET_MFLAG:
 	case ECS_IOCTL_APP_GET_AFLAG:
@@ -290,7 +291,7 @@ static int akm_aot_ioctl(struct inode *inode, struct file *file,
 	default:
 		break;
 	}
-
+printk("akm_aot_ioctl 005\n");
 	return 0;
 }
 

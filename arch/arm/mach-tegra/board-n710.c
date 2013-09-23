@@ -35,13 +35,13 @@
 #include <linux/tegra_uart.h>
 #include <linux/memblock.h>
 #include <linux/spi-tegra.h>
-#include <linux/nfc/pn544.h>
+//#include <linux/nfc/pn544.h>
 #include <linux/skbuff.h>
 #include <linux/regulator/consumer.h>
-#include <linux/smb347-charger.h>
+//#include <linux/smb347-charger.h> //!
 #include <linux/max17048_battery.h>
 #include <linux/leds.h>
-#include <linux/i2c/at24.h>
+//#include <linux/i2c/at24.h>
 
 #include <mach/clk.h>
 #include <mach/iomap.h>
@@ -50,7 +50,8 @@
 #include <mach/iomap.h>
 #include <mach/io.h>
 #include <mach/i2s.h>
-#include <mach/tegra_rt5640_pdata.h>
+//#include <mach/tegra_rt5640_pdata.h>
+#include <mach/tegra_aic325x_pdata.h>
 #include <asm/mach-types.h>
 #include <asm/mach/arch.h>
 #include <mach/usb_phy.h>
@@ -122,6 +123,35 @@ static struct tegra_utmip_config utmi_phy_config[] = {
 	},
 };
 
+/* wl128x BT, FM, GPS connectivity chip */
+/*
+struct ti_st_plat_data kai_wilink_pdata = {
+	.nshutdown_gpio = TEGRA_GPIO_PU0,
+	.dev_name = BLUETOOTH_UART_DEV_NAME,
+	.flow_cntrl = 1,
+	.baud_rate = 3000000,
+};
+
+static struct platform_device wl128x_device = {
+	.name		= "kim",
+	.id		= -1,
+	.dev.platform_data = &kai_wilink_pdata,
+};
+
+static struct platform_device btwilink_device = {
+	.name = "btwilink",
+	.id = -1,
+};
+
+static noinline void __init kai_bt_st(void)
+{
+	pr_info("kai_bt_st");
+
+	platform_device_register(&wl128x_device);
+	platform_device_register(&btwilink_device);
+	tegra_gpio_enable(TEGRA_GPIO_PU0);
+}
+*/
 static struct resource n710_bcm4330_rfkill_resources[] = {
 	{
 		.name   = "bcm4330_nshutdown_gpio",
@@ -199,7 +229,7 @@ static __initdata struct tegra_clk_init_table n710_clk_init_table[] = {
 	{ "i2c5",	"pll_p",	3200000,	false},
 	{ NULL,		NULL,		0,		0},
 };
-
+/*
 static struct pn544_i2c_platform_data nfc_pdata = {
 	.irq_gpio = TEGRA_GPIO_PX0,
 	.ven_gpio = TEGRA_GPIO_PS7,
@@ -213,7 +243,7 @@ static struct i2c_board_info __initdata n710_nfc_board_info[] = {
 		.irq = TEGRA_GPIO_TO_IRQ(TEGRA_GPIO_PX0),
 	},
 };
-
+*/
 static struct tegra_i2c_platform_data n710_i2c1_platform_data = {
 	.adapter_nr	= 0,
 	.bus_count	= 1,
@@ -275,38 +305,61 @@ struct max17048_battery_model max17048_mdata = {
 	.ocvtest        = 55600,
 };
 
-
+/*
 static struct at24_platform_data eeprom_info = {
 	.byte_len	= (256*1024)/8,
 	.page_size	= 64,
 	.flags		= AT24_FLAG_ADDR16,
 	.setup		= get_mac_addr,
 };
-
+*/
 static struct i2c_board_info n710_i2c4_max17048_board_info[] = {
 	{
 		I2C_BOARD_INFO("max17048", 0x36),
 		.platform_data = &max17048_mdata,
 	},
 };
-
+/*
 static struct i2c_board_info n710_eeprom_mac_add = {
 	I2C_BOARD_INFO("at24", 0x56),
 	.platform_data = &eeprom_info,
-};
-
+};*/
+/*
 static struct i2c_board_info cardhu_i2c4_bq27541_board_info[] = {
 	{
 		I2C_BOARD_INFO("bq27541-battery", 0x55),
 	}
 };
-
+*/
+static struct i2c_board_info n710_i2c1_bq27x00_board_info[] = {
+	{
+		I2C_BOARD_INFO("bq27x00-battery", 0x55),
+	}
+};
+/*
+static struct i2c_board_info cardhu_i2c1_bq27541_board_info[] = {
+	{
+		I2C_BOARD_INFO("bq27541-battery", 0x55),
+	}
+};
+*/
+/*
 static struct i2c_board_info n710_i2c4_smb347_board_info[] = {
 	{
 		I2C_BOARD_INFO("smb347", 0x6a),
 	},
 };
-
+*/
+static struct i2c_board_info n710_i2c4_bq24160_board_info[] = {
+	{
+		I2C_BOARD_INFO("bq24160", 0x6b),
+	},
+};
+static struct i2c_board_info __initdata n710_codec_aic325x_info = {
+	I2C_BOARD_INFO("tlv320aic325x-codec", 0x18),
+	.irq = TEGRA_GPIO_TO_IRQ(TEGRA_GPIO_HP_DET),
+};
+/*
 static struct i2c_board_info __initdata rt5640_board_info = {
 	I2C_BOARD_INFO("rt5640", 0x1c),
 	.irq = TEGRA_GPIO_TO_IRQ(TEGRA_GPIO_CDC_IRQ),
@@ -316,7 +369,7 @@ static struct i2c_board_info __initdata rt5639_board_info = {
 	I2C_BOARD_INFO("rt5639", 0x1c),
 	.irq = TEGRA_GPIO_TO_IRQ(TEGRA_GPIO_CDC_IRQ),
 };
-
+*/
 static void n710_i2c_init(void)
 {
 	struct board_info board_info;
@@ -334,21 +387,36 @@ static void n710_i2c_init(void)
 	platform_device_register(&tegra_i2c_device3);
 	platform_device_register(&tegra_i2c_device2);
 	platform_device_register(&tegra_i2c_device1);
-
+/*	
 	i2c_register_board_info(4, n710_i2c4_smb347_board_info,
 		ARRAY_SIZE(n710_i2c4_smb347_board_info));
-
+*/	
+	i2c_register_board_info(4, n710_i2c4_bq24160_board_info,
+		ARRAY_SIZE(n710_i2c4_bq24160_board_info));
+		
+	i2c_register_board_info(4, &n710_codec_aic325x_info, 1);
+	
+/*
 	i2c_register_board_info(4, &rt5640_board_info, 1);
-
+*/
+/*
 	i2c_register_board_info(4, &n710_eeprom_mac_add, 1);
-
+*/
+/*
 	i2c_register_board_info(4, cardhu_i2c4_bq27541_board_info,
 		ARRAY_SIZE(cardhu_i2c4_bq27541_board_info));
-
+*/
+	i2c_register_board_info(1, n710_i2c1_bq27x00_board_info,
+		ARRAY_SIZE(n710_i2c1_bq27x00_board_info));
+/*
+	i2c_register_board_info(1, cardhu_i2c1_bq27541_board_info,
+		ARRAY_SIZE(cardhu_i2c1_bq27541_board_info));		
+*/		
 	i2c_register_board_info(4, n710_i2c4_max17048_board_info,
 		ARRAY_SIZE(n710_i2c4_max17048_board_info));
-
+/*
 	i2c_register_board_info(2, n710_nfc_board_info, 1);
+*/
 }
 
 static struct platform_device *n710_uart_devices[] __initdata = {
@@ -537,6 +605,33 @@ static struct platform_device tegra_rtc_device = {
 	.num_resources = ARRAY_SIZE(tegra_rtc_resources),
 };
 
+static struct tegra_aic325x_platform_data n710_audio_aic325x_pdata = {
+	.gpio_spkr_en		= TEGRA_GPIO_SPKR_EN,
+	.gpio_hp_det		= TEGRA_GPIO_HP_DET,
+	.gpio_hp_mute		= -1,
+	.gpio_int_mic_en	= -1,
+	.gpio_ext_mic_en	= -1,
+	/*defaults for Verbier-Enterprise (E1197) board with TI AIC326X codec*/
+	.audio_port_id		= {
+		[HIFI_CODEC] = 0,
+		[BASEBAND] = 2,
+		[BT_SCO] = 3,
+	},
+	.baseband_param		= {
+		.rate = 8000,
+		.channels = 1,
+//		.bit_format = TEGRA_DAIFMT_DSP_A,
+	},
+};
+
+static struct platform_device n710_audio_device = {
+	.name	= "tegra-snd-aic325x",
+	.id	= 0,
+	.dev	= {
+		.platform_data  = &n710_audio_aic325x_pdata,
+	},
+};
+/*
 static struct tegra_rt5640_platform_data n710_audio_pdata = {
 	.gpio_spkr_en		= TEGRA_GPIO_SPKR_EN,
 	.gpio_hp_det		= TEGRA_GPIO_HP_DET,
@@ -552,7 +647,7 @@ static struct platform_device n710_audio_device = {
 		.platform_data = &n710_audio_pdata,
 	},
 };
-
+*/
 static struct gpio_led n710_led_info[] = {
 	{
 		.name			= "statled",
@@ -611,7 +706,7 @@ static struct platform_device *n710_devices[] __initdata = {
 	&tegra_aes_device,
 #endif
 };
-
+#if 0 //remove 
 static __initdata struct tegra_clk_init_table spi_clk_init_table[] = {
 	/* name         parent          rate            enabled */
 	{ "sbc1",       "pll_p",        52000000,       true},
@@ -624,6 +719,34 @@ static __initdata struct tegra_clk_init_table touch_clk_init_table[] = {
 	{ "clk_out_3",  "extern3",      40800000,       true},
 	{ NULL,         NULL,           0,              0},
 };
+#endif
+#if defined(CONFIG_TOUCHSCREEN_NOVATEK)
+// Power pin:	TEGRA_GPIO_PH3
+// Interrupt pin: TEGRA_GPIO_PH4
+// Reset pin: TEGRA_GPIO_PH6
+
+#include <linux/i2c/novatek_nt11003.h>
+
+static struct novatek_i2c_platform_data ts_novatek_nt11003_data[] = {
+        {
+			.version = 11003,               /* Use this entry for panels with */		
+			.gpio_rst = TEGRA_GPIO_PG5,
+			.gpio_irq = TEGRA_GPIO_PG4,
+			//.gpio_pwn = TEGRA_GPIO_PH3,
+			.irq_edge = 1,          /* 0:rising edge, 1:falling edge */
+			.screen_max_x = 1280,
+			.screen_max_y = 800,		
+        },
+};
+static struct i2c_board_info novatek_i2c_devices[] = {
+        {
+                I2C_BOARD_INFO(NOVATEK_I2C_NAME, 0x01),//0x10
+                .platform_data = &ts_novatek_nt11003_data,
+                .irq = (INT_GPIO_BASE + TEGRA_GPIO_PH4),
+        },
+
+};
+#endif
 
 #if defined(CONFIG_TOUCHSCREEN_ELAN_TF_3K)
 // Interrupt pin: TEGRA_GPIO_PH4
@@ -653,28 +776,33 @@ static struct i2c_board_info elan_i2c_devices[] = {
 };
 #endif
 
-static int elan_touch_init(void)
+static int novatek_touch_init(void)
 {
+/*
+#if 0
 	struct board_info BoardInfo;
 #if defined(CONFIG_TOUCHSCREEN_ELAN_TF_3K)
       struct elan_ktf3k_i2c_platform_data *platform;
 #endif
-	tegra_gpio_enable(TEGRA_GPIO_PH3);
-	tegra_gpio_enable(TEGRA_GPIO_PH4);
-	tegra_gpio_enable(TEGRA_GPIO_PH6);
-
+#endif
+*/
+//	tegra_gpio_enable(TEGRA_GPIO_PH3);
+	tegra_gpio_enable(TEGRA_GPIO_PH4); //TEGRA_GPIO_PH4
+	tegra_gpio_enable(TEGRA_GPIO_PH6); //TEGRA_GPIO_PH6
+/*
 	gpio_request(TEGRA_GPIO_PH3, "elan-pwn");
 	gpio_direction_output(TEGRA_GPIO_PH3, 1);
-
+*/
 	gpio_request(TEGRA_GPIO_PH4, "elan-irq");
-	gpio_direction_input(TEGRA_GPIO_PH4);
+	gpio_direction_input(TEGRA_GPIO_PH4); //TEGRA_GPIO_PG4
 
 	gpio_request(TEGRA_GPIO_PH6, "elan-reset");
-	gpio_direction_output(TEGRA_GPIO_PH6, 0);
+	gpio_direction_output(TEGRA_GPIO_PH6, 0); //TEGRA_GPIO_PG5
 	msleep(1);
 	gpio_set_value(TEGRA_GPIO_PH6, 1);
 	msleep(100);
-
+/*	
+#if 0
 	tegra_get_board_info(&BoardInfo);
 #if defined(CONFIG_TOUCHSCREEN_ATMEL_MXT)
 	if ((BoardInfo.sku & SKU_TOUCH_MASK) == SKU_TOUCH_2000) {
@@ -690,15 +818,22 @@ static int elan_touch_init(void)
 	printk("[ELAN] Touch dirver register\n");
 	i2c_register_board_info(1, elan_i2c_devices, 1);
 #endif
+
+#endif
+*/
+#if defined(CONFIG_TOUCHSCREEN_NOVATEK)
+	i2c_register_board_info(1, novatek_i2c_devices, 1);
+#endif
 	return 0;
 
 }
 
 static int __init n710_touch_init(void)
 {
-	int touch_id;
+//	int touch_id;
 
-    return elan_touch_init();	
+    return novatek_touch_init();	
+	/*	
 	tegra_gpio_enable(N710_TS_ID1);
 	tegra_gpio_enable(N710_TS_ID2);
 
@@ -712,15 +847,18 @@ static int __init n710_touch_init(void)
 	touch_id |= gpio_get_value(N710_TS_ID2);
 
 	pr_info("touch-id %d\n", touch_id);
-
+printk("touch-id %d\n", touch_id);
+*/
 	/* Disable TS_ID GPIO to save power */
+/*	
 	gpio_direction_output(N710_TS_ID1, 0);
 	tegra_pinmux_set_pullupdown(N710_TS_ID1_PG, TEGRA_PUPD_NORMAL);
 	tegra_pinmux_set_tristate(N710_TS_ID1_PG, TEGRA_TRI_TRISTATE);
 	gpio_direction_output(N710_TS_ID2, 0);
 	tegra_pinmux_set_pullupdown(N710_TS_ID2_PG, TEGRA_PUPD_NORMAL);
 	tegra_pinmux_set_tristate(N710_TS_ID2_PG, TEGRA_TRI_TRISTATE);
-
+	*/
+/*
 	switch (touch_id) {
 	case 0:
 		pr_info("Raydium PCB based touch init\n");
@@ -742,7 +880,7 @@ static int __init n710_touch_init(void)
 	default:
 		pr_err("touch_id error, no touch %d\n", touch_id);
 	}
-	return 0;
+	return 0;*/
 }
 
 static struct tegra_ehci_platform_data tegra_ehci_pdata[] = {
@@ -781,6 +919,7 @@ static struct usb_phy_plat_data tegra_usb_phy_pdata[] = {
 
 static void n710_usb_init(void)
 {
+printk("*** n710_usb otg ehci2\n");	
 	tegra_usb_phy_init(tegra_usb_phy_pdata,
 			ARRAY_SIZE(tegra_usb_phy_pdata));
 
@@ -828,30 +967,30 @@ static void n710_modem_init(void)
 static void n710_usb_init(void) { }
 static void n710_modem_init(void) { }
 #endif
-
+/*
 static void n710_audio_init(void)
 {
-	struct board_info board_info;
+//	struct board_info board_info;
 
-	tegra_get_board_info(&board_info);
+//	tegra_get_board_info(&board_info);
 
 	n710_audio_pdata.codec_name = "rt5640.4-001c";
 	n710_audio_pdata.codec_dai_name = "rt5640-aif1";
 }
-
+*/
 static void n710_gps_init(void)
 {
 	tegra_gpio_enable(TEGRA_GPIO_PU2);
 	tegra_gpio_enable(TEGRA_GPIO_PU3);
 }
-
+/*
 static void n710_nfc_init(void)
 {
 	tegra_gpio_enable(TEGRA_GPIO_PX0);
 	tegra_gpio_enable(TEGRA_GPIO_PS7);
 	tegra_gpio_enable(TEGRA_GPIO_PR3);
 }
-
+*/
 unsigned int boot_reason=0;
 void n710_booting_info(void )
 {
@@ -877,45 +1016,92 @@ void n710_booting_info(void )
 
 static void __init tegra_n710_init(void)
 {
+printk("*** START\n");	
+printk("*** tegra_thermal_init\n");
 	tegra_thermal_init(&thermal_data);
+printk("*** tegra_clk_init_from_table\n");
 	tegra_clk_init_from_table(n710_clk_init_table);
+printk("*** n710_pinmux_init\n");	
 	n710_pinmux_init();
-	n710_misc_init();
+printk("*** n710_misc_init\n");	
+	n710_misc_init();  // remove
+printk("*** n710_booting_info\n");	
 	n710_booting_info();
+printk("*** n710_i2c_init\n");	
 	n710_i2c_init();
+printk("*** n710_spi_init\n");		
 	n710_spi_init();
+printk("*** n710_usb_init\n");		
 	n710_usb_init();
 #ifdef CONFIG_TEGRA_EDP_LIMITS
+printk("*** n710_ti_edp_init\n");	
+/*
 	if (grouper_query_pmic_id())
 		n710_ti_edp_init();
 	else
+*/
 		n710_edp_init();
 #endif
+printk("*** n710_uart_init\n");		
 	n710_uart_init();
+/*
+printk("*** n710_audio_init\n");		
 	n710_audio_init();
+*/	
+printk("*** platform_add_devices\n");	
 	platform_add_devices(n710_devices, ARRAY_SIZE(n710_devices));
+printk("*** tegra_ram_console_debug_init\n");
 	tegra_ram_console_debug_init();
+printk("*** n710_sdhci_init\n");	
 	n710_sdhci_init();
+printk("*** regulator_init (grouper_query_pmic_id %d)\n", grouper_query_pmic_id());	
+/*
 	if (grouper_query_pmic_id()) {
 		n710_ti_regulator_init();
 		n710_ti_suspend_init();
 	} else {
+*/	
 		n710_regulator_init();
 		n710_suspend_init();
+/*		
 	}
+*/
+
+printk("*** n710_touch_init\n");	
 	n710_touch_init();
+/*
+printk("*** n710_gps_init\n");
 	n710_gps_init();
+*/	
+printk("*** n710_keys_init\n");	
 	n710_keys_init();
-	n710_panel_init();
+/*	*/	
+printk("*** n710_panel_init\n");	
+	n710_panel_init(); //hmmmmmmmmmmmmm
+/*	
+printk("*** kai_bt_st\n");		
+	kai_bt_st();
+*/
+/*	
+printk("*** n710_nfc_init\n");	
 	n710_nfc_init();
+*/
+/**/
+printk("*** n710_sensors_init\n");		
 	n710_sensors_init();
+
+printk("*** n710_setup_bluesleep\n");		
 	n710_setup_bluesleep();
+printk("*** n710_pins_state_init\n");		
 	n710_pins_state_init();
+printk("*** n710_emc_init\n");		
 	n710_emc_init();
 //	tegra_release_bootloader_fb();
 #ifdef CONFIG_TEGRA_WDT_RECOVERY
+printk("*** tegra_wdt_recovery_init\n");	
 	tegra_wdt_recovery_init();
 #endif
+printk("*** END\n");	
 }
 
 static void __init n710_ramconsole_reserve(unsigned long size)
@@ -934,7 +1120,7 @@ static void __init tegra_n710_reserve(void)
 	n710_ramconsole_reserve(SZ_1M);
 }
 
-MACHINE_START(N710, "n710")
+MACHINE_START(N710, "N710")
 	.boot_params	= 0x80000100,
 	.map_io		= tegra_map_common_io,
 	.reserve	= tegra_n710_reserve,

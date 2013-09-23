@@ -1,5 +1,5 @@
 /*
- * arch/arm/mach-tegra/board-n710-panel.c
+ * arch/arm/mach-tegra/board-grouper-panel.c
  *
  * Copyright (c) 2012, NVIDIA Corporation.
  *
@@ -39,17 +39,17 @@
 #include "gpio-names.h"
 
 /* n710 default display board pins */
-#define n710_lvds_avdd_en		TEGRA_GPIO_PH6
-#define n710_lvds_rst			TEGRA_GPIO_PG7
+#define n710_lvds_avdd_en		TEGRA_GPIO_PH2
+//#define n710_lvds_rst			TEGRA_GPIO_PG7
 #define n710_lvds_shutdown		TEGRA_GPIO_PN6
-#define n710_lvds_rs			TEGRA_GPIO_PV6
-#define n710_lvds_lr			TEGRA_GPIO_PG1
+//#define n710_lvds_rs			TEGRA_GPIO_PV6
+//#define n710_lvds_lr			TEGRA_GPIO_PG1
 
 /* n710 A00 display board pins */
-#define n710_lvds_rs_a00		TEGRA_GPIO_PH1
+//#define n710_lvds_rs_a00		TEGRA_GPIO_PH1
 
 /* common pins( backlight ) for all display boards */
-//#define n710_bl_enb			TEGRA_GPIO_PH3
+#define n710_bl_enb			TEGRA_GPIO_PH3
 #define n710_bl_pwm			TEGRA_GPIO_PH0
 #define n710_hdmi_hpd			TEGRA_GPIO_PN7
 
@@ -123,14 +123,14 @@ static int n710_backlight_init(struct device *dev)
 	else
 		tegra_gpio_enable(n710_bl_enb);
 	*/
-
+	
 	return ret;
 };
 
 static void n710_backlight_exit(struct device *dev)
 {
 	/* int ret; */
-	/*ret = gpio_request(n710_bl_enb, "backlight_enb");*/
+	/* ret = gpio_request(n710_bl_enb, "backlight_enb"); */
 	/*
 	gpio_set_value(n710_bl_enb, 0);
 	gpio_free(n710_bl_enb);
@@ -164,7 +164,7 @@ static struct platform_pwm_backlight_data n710_backlight_data = {
 	.pwm_id		= 0,
 	.max_brightness	= 255,
 	.dft_brightness	= 40,
-	.pwm_period_ns	= 50000,
+	.pwm_period_ns	= 50000, //1000000
 	.init		= n710_backlight_init,
 	.exit		= n710_backlight_exit,
 	.notify		= n710_backlight_notify,

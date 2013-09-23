@@ -167,7 +167,7 @@ obj-${CONFIG_MACH_CARDHU}               += board-cardhu-powermon.o
 
 obj-${CONFIG_MACH_KAI}                  += board-touch-kai-synaptics-spi.o
 obj-${CONFIG_MACH_GROUPER}              += board-touch-grouper-synaptics-spi.o
-obj-${CONFIG_MACH_N710}                 += board-touch-n710-synaptics-spi.o
+#obj-${CONFIG_MACH_N710}                 += board-touch-n710-synaptics-spi.o
 obj-y                                   += board-touch-raydium_spi.o
 
 obj-${CONFIG_MACH_P1852}               += board-p1852.o
@@ -210,7 +210,7 @@ obj-${CONFIG_MACH_N710}                 += board-n710-misc.o
 obj-${CONFIG_MACH_N710}                 += board-n710-panel.o
 obj-${CONFIG_MACH_N710}                 += board-n710-pinmux.o
 obj-${CONFIG_MACH_N710}                 += board-n710-power.o
-obj-${CONFIG_MACH_N710}                 += board-n710-power-ti.o
+#obj-${CONFIG_MACH_N710}                 += board-n710-power-ti.o
 obj-${CONFIG_MACH_N710}                 += board-n710-sdhci.o
 obj-${CONFIG_MACH_N710}                 += board-n710-sensors.o
 obj-y                                   += eeprom-wifi-mac.o

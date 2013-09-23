@@ -29,6 +29,12 @@
 #ifdef CONFIG_VIDEO_OV2710
 #include <media/ov2710.h>
 #endif
+#ifdef CONFIG_SENSORS_AK8975
+#include <linux/akm8975.h>
+#endif
+#ifdef CONFIG_INPUT_KXTIK
+#include <linux/input/kxtik.h>
+#endif
 #include <media/yuv_sensor.h>
 #include "board.h"
 #include "board-n710.h"
@@ -46,14 +52,14 @@ static struct regulator *n710_1v8_cam3;
 static struct regulator *n710_vdd_cam3;
 
 static unsigned int pmic_id;
-
+/*
 static const struct i2c_board_info cardhu_i2c1_board_info_al3010[] = {
 	{
 		I2C_BOARD_INFO("al3010",0x1C),
 		.irq = TEGRA_GPIO_TO_IRQ(TEGRA_GPIO_PZ2),
 	},
 };
-
+*//*
 static int n710_camera_init(void)
 {
 	pmic_id = grouper_query_pmic_id();
@@ -152,13 +158,13 @@ static struct i2c_board_info n710_i2c2_board_info[] = {
 	},
 };
 #endif
-
+*//*
 static int yuv_front_sensor_power_on(void)
 {
 	int ret;
 	printk("yuv_front_sensor_power_on+\n");
 
-	/* AVDD_CAM1, 2.85V, controlled by CAM1_LDO_EN */
+	// AVDD_CAM1, 2.85V, controlled by CAM1_LDO_EN 
 	pr_info("gpio %d read as %d\n",CAM1_LDO_EN_GPIO, gpio_get_value(CAM1_LDO_EN_GPIO));
 	tegra_gpio_enable(CAM1_LDO_EN_GPIO);
 	ret = gpio_request(CAM1_LDO_EN_GPIO, "cam1_ldo_en");
@@ -189,7 +195,7 @@ static int yuv_front_sensor_power_on(void)
 
 	tegra_pinmux_set_tristate(TEGRA_PINGROUP_CAM_MCLK, TEGRA_TRI_NORMAL);
 
-	/* yuv_sensor_rst_lo*/
+	// yuv_sensor_rst_lo
 	tegra_gpio_enable(FRONT_YUV_SENSOR_RST_GPIO);
 	ret = gpio_request(FRONT_YUV_SENSOR_RST_GPIO, "yuv_sensor_rst_lo");
 
@@ -259,18 +265,19 @@ static struct i2c_board_info front_sensor_i2c2_board_info[] = {  //ddebug
 		I2C_BOARD_INFO("mi1040", 0x48),
 		.platform_data = &yuv_front_sensor_data,
 	},
-};
+};*/
 /* MPU board file definition	*/
+/*
 #if (MPU_GYRO_TYPE == MPU_TYPE_MPU3050)
 #define MPU_GYRO_NAME		"mpu3050"
 static struct mpu_platform_data mpu_gyro_data = {
 	.int_config  = 0x10,
 	.level_shifter = 0,
-	.orientation = MPU_GYRO_ORIENTATION,	/* Located in board_[platformname].h	*/
+	.orientation = MPU_GYRO_ORIENTATION,	// Located in board_[platformname].h	
 	.sec_slave_type = SECONDARY_SLAVE_TYPE_ACCEL,
 	.sec_slave_id   = ACCEL_ID_BMA250,
 	.secondary_i2c_addr = MPU_ACCEL_ADDR,
-	.secondary_orientation = MPU_ACCEL_ORIENTATION,	/* Located in board_[platformname].h	*/
+	.secondary_orientation = MPU_ACCEL_ORIENTATION,	// Located in board_[platformname].h	
 	.key = {221, 22, 205, 7,   217, 186, 151, 55,
 		206, 254, 35, 144, 225, 102,  47, 50},
 };
@@ -280,14 +287,14 @@ static struct mpu_platform_data mpu_gyro_data = {
 static struct mpu_platform_data mpu_gyro_data = {
         .int_config  = 0x10,
         .level_shifter = 0,
-        .orientation = MPU_GYRO_ORIENTATION,	/* Located in board_[platformname].h	*/
+        .orientation = MPU_GYRO_ORIENTATION,	// Located in board_[platformname].h	
         .sec_slave_type = SECONDARY_SLAVE_TYPE_NONE,
         .key = {221, 22, 205, 7,   217, 186, 151, 55,
                 206, 254, 35, 144, 225, 102,  47, 50},
 };
 #endif
 static struct mpu_platform_data mpu_compass_data = {
-	.orientation = MPU_COMPASS_ORIENTATION,	/* Located in board_[platformname].h	*/
+	.orientation = MPU_COMPASS_ORIENTATION,	// Located in board_[platformname].h	
 };
 
 static struct i2c_board_info __initdata inv_mpu_i2c2_board_info[] = {
@@ -308,7 +315,7 @@ static void mpuirq_init(void)
 
 	pr_info("*** MPU START *** mpuirq_init...\n");
 
-	/* MPU-IRQ assignment */
+	// MPU-IRQ assignment 
 	tegra_gpio_enable(MPU_GYRO_IRQ_GPIO);
 	ret = gpio_request(MPU_GYRO_IRQ_GPIO, MPU_GYRO_NAME);
 	if (ret < 0) {
@@ -327,7 +334,7 @@ static void mpuirq_init(void)
 	i2c_register_board_info(MPU_GYRO_BUS_NUM, inv_mpu_i2c2_board_info,
 		ARRAY_SIZE(inv_mpu_i2c2_board_info));
 }
-
+*/
 #ifndef CONFIG_TEGRA_INTERNAL_TSENSOR_EDP_SUPPORT
 static int nct_get_temp(void *_data, long *temp)
 {
@@ -436,32 +443,82 @@ static int n710_nct1008_init(void)
 
 	return ret;
 }
+#ifdef CONFIG_INPUT_KXTIK
+static struct kxtik_platform_data n710_kxtik_pdata = {
+	.min_interval = 66,
+	.res_12bit = RES_12BIT,
+	.g_range = KXTIK_G_8G,
+//	.data_odr_init = ODR200F,
+};
+#endif
+#ifdef CONFIG_SENSORS_AK8975
+static struct akm8975_platform_data n710_akm8975_pdata = {
+	.intr = 0,
+	.init = NULL,
+	.exit = NULL,
+	.power_on = NULL,
+	.power_off = NULL,
+};
+
+static void n710_akm8975_init(void)
+{
+	tegra_gpio_enable(AKM8975_IRQ_GPIO);
+	gpio_request(AKM8975_IRQ_GPIO, "akm8975");
+	gpio_direction_input(AKM8975_IRQ_GPIO);
+}
+#endif
+
+static struct i2c_board_info n710_i2c0_board_info[] = {
+#ifdef CONFIG_INPUT_KXTIK //SENSORS_KXTIK
+	{
+		I2C_BOARD_INFO("kxtik", 0x0F), //kxtik
+		.platform_data = &n710_kxtik_pdata,
+		.irq = TEGRA_GPIO_TO_IRQ(0), /* Disable ACCELIRQ: TEGRA_GPIO_PN4 */
+	},
+#endif
+#ifdef CONFIG_SENSORS_AK8975
+	{
+		I2C_BOARD_INFO("akm8975", 0x0C),
+		.platform_data = &n710_akm8975_pdata,
+		.irq = TEGRA_GPIO_TO_IRQ(AKM8975_IRQ_GPIO),
+	},
+#endif
+};
 
 int __init n710_sensors_init(void)
 {
 	int err;
-	n710_camera_init();
+//	n710_camera_init();
 
 #ifdef CONFIG_VIDEO_OV2710
-	i2c_register_board_info(2, n710_i2c2_board_info,
-		ARRAY_SIZE(n710_i2c2_board_info));
+//	i2c_register_board_info(2, n710_i2c2_board_info,
+//		ARRAY_SIZE(n710_i2c2_board_info));
 
 #endif
 /* Front Camera mi1040 + */
-    pr_info("mi1040 i2c_register_board_info");
+/*    pr_info("mi1040 i2c_register_board_info");
 	i2c_register_board_info(2, front_sensor_i2c2_board_info,
 		ARRAY_SIZE(front_sensor_i2c2_board_info));
+*/
+
+#ifdef CONFIG_SENSORS_AK8975
+	n710_akm8975_init();
+#endif
 
 	err = n710_nct1008_init();
 	if (err)
 		printk("[Error] Thermal: Configure GPIO_PCC2 as an irq fail!");
+		
+	i2c_register_board_info(0, n710_i2c0_board_info,
+		ARRAY_SIZE(n710_i2c0_board_info));	
+		
 	i2c_register_board_info(4, n710_i2c4_nct1008_board_info,
 		ARRAY_SIZE(n710_i2c4_nct1008_board_info));
 
-	mpuirq_init();
+/*	mpuirq_init();*/
 
-	i2c_register_board_info(2, cardhu_i2c1_board_info_al3010,
+/*	i2c_register_board_info(2, cardhu_i2c1_board_info_al3010,
 		ARRAY_SIZE(cardhu_i2c1_board_info_al3010));
-
+*/
 	return 0;
 }

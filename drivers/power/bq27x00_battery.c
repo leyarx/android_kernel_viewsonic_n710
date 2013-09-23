@@ -81,6 +81,9 @@
 /* bq27x00 requires 3 to 4 second to update charging status */
 #define CHARGING_STATUS_UPDATE_DELAY_SECS	4
 
+/* Global variable */
+unsigned battery_cable_status = 0;
+
 struct bq27x00_device_info;
 struct bq27x00_access_methods {
 	int (*read)(struct bq27x00_device_info *di, u8 reg, bool single);

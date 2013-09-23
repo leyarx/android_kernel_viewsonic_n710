@@ -45,11 +45,11 @@
 #define CAM2_RST_GPIO		TEGRA_GPIO_PBB4
 #define CAM2_POWER_DWN_GPIO	TEGRA_GPIO_PBB6
 /* Audio-related GPIOs */
-#define TEGRA_GPIO_CDC_IRQ		TEGRA_GPIO_PW3
-#define TEGRA_GPIO_SPKR_EN		-1
-#define TEGRA_GPIO_HP_DET		TEGRA_GPIO_PW2
-#define TEGRA_GPIO_INT_MIC_EN		TEGRA_GPIO_PK3
-#define TEGRA_GPIO_EXT_MIC_EN		TEGRA_GPIO_PK4
+//#define TEGRA_GPIO_CDC_IRQ		TEGRA_GPIO_PW3
+#define TEGRA_GPIO_SPKR_EN			TEGRA_GPIO_PB1 //-1
+#define TEGRA_GPIO_HP_DET			TEGRA_GPIO_PW2
+//#define TEGRA_GPIO_INT_MIC_EN		TEGRA_GPIO_PK3
+//#define TEGRA_GPIO_EXT_MIC_EN		TEGRA_GPIO_PK4
 /* Tegra Modem related GPIOs */
 #define TEGRA_GPIO_W_DISABLE		TEGRA_GPIO_PDD7
 #define TEGRA_GPIO_MODEM_RSVD1		TEGRA_GPIO_PV0
@@ -70,7 +70,7 @@
 /* UART port which is used by bluetooth*/
 #define BLUETOOTH_UART_DEV_NAME "/dev/ttyHS2"
 
-int n710_charge_init(void);
+//int n710_charge_init(void);
 int n710_regulator_init(void);
 int n710_suspend_init(void);
 int n710_sdhci_init(void);
@@ -81,11 +81,12 @@ int n710_keys_init(void);
 int n710_pins_state_init(void);
 int n710_emc_init(void);
 int n710_edp_init(void);
-int n710_ti_regulator_init(void);
-int n710_ti_suspend_init(void);
-int n710_ti_edp_init(void);
+//int n710_ti_regulator_init(void);
+//int n710_ti_suspend_init(void);
+//int n710_ti_edp_init(void);
 
 void __init n710_tsensor_init(void);
+/*
 int __init touch_init_raydium(int irq_gpio, int reset_gpio, int platform);
 int __init touch_init_synaptics_n710(void);
 
@@ -99,7 +100,10 @@ int __init touch_init_synaptics_n710(void);
 #define N710_TS_ID2      TEGRA_GPIO_PC7
 #define N710_TS_ID1_PG   TEGRA_PINGROUP_GMI_WAIT
 #define N710_TS_ID2_PG   TEGRA_PINGROUP_GMI_WP_N
+*/
 
+#define AKM8975_IRQ_GPIO	TEGRA_GPIO_PW0
+/*
 #define MPU_TYPE_MPU3050	1
 #define MPU_TYPE_MPU6050	2
 #define MPU_GYRO_TYPE		MPU_TYPE_MPU6050
@@ -119,7 +123,7 @@ int __init touch_init_synaptics_n710(void);
 #define MPU_COMPASS_ADDR	0x0E
 #define MPU_COMPASS_BUS_NUM	2
 #define MPU_COMPASS_ORIENTATION	{ 0, -1, 0, -1, 0, 0, 0, 0, -1 }
-
+*/
 #define TDIODE_OFFSET	(10000) /* in millicelsius */
 
-#endif
+#endif /* _MACH_TEGRA_BOARD_N710_H */

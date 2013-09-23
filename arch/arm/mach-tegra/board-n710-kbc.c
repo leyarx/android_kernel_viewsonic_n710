@@ -46,11 +46,11 @@
 		.wakeup = _iswake,		\
 		.debounce_interval = 10,	\
 	}
-
+	
 static struct gpio_keys_button n710_keys[] = {
 	[0] = GPIO_KEY(KEY_POWER, PV0, 1),
-	[1] = GPIO_KEY(KEY_VOLUMEUP, PQ2, 0),
-	[2] = GPIO_KEY(KEY_VOLUMEDOWN, PQ3, 0),
+	[1] = GPIO_KEY(KEY_VOLUMEUP, PR0, 0), //PQ2
+	[2] = GPIO_KEY(KEY_VOLUMEDOWN, PR1, 0), //PQ3
 };
 
 static struct gpio_keys_platform_data n710_keys_platform_data = {

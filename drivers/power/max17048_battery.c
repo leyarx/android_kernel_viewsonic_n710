@@ -484,11 +484,11 @@ static int __devinit max17048_probe(struct i2c_client *client,
 		dev_err(&client->dev, "Error: Initializing fuel-gauge\n");
 		goto error2;
 	}
-
+/* uncomment this part!!!
 	ret = register_callback(max17048_battery_status, chip);
 	if (ret < 0)
 		goto error2;
-
+*/
 	chip->battery.name		= "battery";
 	chip->battery.type		= POWER_SUPPLY_TYPE_BATTERY;
 	chip->battery.get_property	= max17048_get_property;
@@ -527,13 +527,13 @@ static int __devinit max17048_probe(struct i2c_client *client,
 
 	INIT_DELAYED_WORK_DEFERRABLE(&chip->work, max17048_work);
 	schedule_delayed_work(&chip->work, MAX17048_DELAY);
-
+/* uncomment this part!!!
 	ret = update_charger_status();
 	if (ret) {
 		dev_err(&client->dev, "failed: update_charger_status\n");
 		goto error;
 	}
-
+*/
 	return 0;
 error:
 	power_supply_unregister(&chip->ac);

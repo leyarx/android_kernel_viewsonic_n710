@@ -42,7 +42,7 @@
 #include "pm.h"
 #include "wakeups-t3.h"
 #include "tegra3_tsensor.h"
-#include <mach/board-n710-misc.h>
+//#include <mach/board-n710-misc.h>
 
 #define PMC_CTRL		0x0
 #define PMC_CTRL_INTR_LOW	(1 << 17)
@@ -459,20 +459,27 @@ FIXED_REG(3, en_1v8_cam_a00,	en_1v8_cam,		max77663_rails(sd2),
 	0,	0,	TEGRA_GPIO_PS0,				true,	0,	1800);
 FIXED_REG(4, en_vddio_vid_a00,	en_vddio_vid,		NULL,
 	0,	0,	TEGRA_GPIO_PB2,				true,	0,	5000);
+	
 FIXED_REG(5, en_3v3_modem_a00,	en_3v3_modem,		NULL,
-	1,	1,	TEGRA_GPIO_PP0,				true,	0,	3300);
+	1,	1,	TEGRA_GPIO_PP0,				true,	0,	3300); // no
+	
 FIXED_REG(6, en_vdd_pnl_a00,	en_vdd_pnl,		FIXED_SUPPLY(en_3v3_sys_a00),
 	0,	0,	TEGRA_GPIO_PW1,				true,	1,	3300);
+	
 FIXED_REG(7, en_cam3_ldo_a00,	en_cam3_ldo,		FIXED_SUPPLY(en_3v3_sys_a00),
-	0,	0,	TEGRA_GPIO_PR7,				true,	0,	3300);
+	0,	0,	TEGRA_GPIO_PR7,				true,	0,	3300); // en_cam1_ldo PR6
+	
+	
 FIXED_REG(8, en_vdd_com_a00,	en_vdd_com,		FIXED_SUPPLY(en_3v3_sys_a00),
-	1,	0,	TEGRA_GPIO_PD0,				true,	0,	3300);
+	1,	0,	TEGRA_GPIO_PD0,				true,	0,	3300); //no
+	
 FIXED_REG(9,  en_vdd_sdmmc1_a00, en_vdd_sdmmc1,		FIXED_SUPPLY(en_3v3_sys_a00),
 	0,	0,	TEGRA_GPIO_PC6,				true,	0,	3300);
 FIXED_REG(10, en_3v3_fuse_a00,	en_3v3_fuse,		FIXED_SUPPLY(en_3v3_sys_a00),
 	0,	0,	TEGRA_GPIO_PC1,				true,	0,	3300);
+	
 FIXED_REG(11, cdc_en_a00,	cdc_en,			max77663_rails(sd2),
-	0,	1,	TEGRA_GPIO_PX2,				true,	0,	1200);
+	0,	1,	TEGRA_GPIO_PX2,				true,	0,	1200); //no
 
 /* A01 specific */
 FIXED_REG(1, en_3v3_sys_a01,	en_3v3_sys_a01,		NULL,
@@ -548,22 +555,26 @@ static int __init n710_fixed_regulator_init(void)
 	struct board_info board_info;
 	struct platform_device **fixed_reg_devs;
 	int nfixreg_devs;
-
+/*
 	if (grouper_query_pmic_id())
 		return 0;
-	tegra_get_board_info(&board_info);
+*/
+		tegra_get_board_info(&board_info);
 
 	if (board_info.fab == BOARD_FAB_A00) {
+printk("[fixed_regulator_init] BOARD_FAB_A00\n");	
 		fixed_reg_devs = fixed_reg_devs_a00;
 		nfixreg_devs = ARRAY_SIZE(fixed_reg_devs_a00);
 	} else {
+printk("[fixed_regulator_init] BOARD_FAB_A01\n");  // this one		
 		fixed_reg_devs = fixed_reg_devs_a01;
 		nfixreg_devs = ARRAY_SIZE(fixed_reg_devs_a01);
 	}
 
-	if (!machine_is_n710())
+	if (!machine_is_n710()) {
+printk("machine_is_n710 no\n");
 		return 0;
-
+	}
 	for (i = 0; i < nfixreg_devs; ++i) {
 		int gpio_nr;
 		struct fixed_voltage_config *fixed_reg_pdata =
@@ -636,7 +647,7 @@ static struct tegra_tsensor_pmu_data  tpdata = {
 	.i2c_controller_id = 4,
 	.pinmux = 0,
 	.pmu_16bit_ops = 0,
-	.pmu_i2c_addr = 0x2D,
+	.pmu_i2c_addr = 0x2D, //?
 };
 
 void __init n710_tsensor_init(void)

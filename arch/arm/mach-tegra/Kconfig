@@ -186,8 +186,7 @@ config MACH_GROUPER
 config MACH_N710
        bool "Viewpad N710"
        depends on ARCH_TEGRA_3x_SOC
-       select MACH_HAS_SND_SOC_TEGRA_RT5639 if SND_SOC
-       select MACH_HAS_SND_SOC_TEGRA_RT5640 if SND_SOC
+       select MACH_HAS_SND_SOC_TEGRA_TLV320AIC325X if SND_SOC
        help
          Support for ViewSonic Viewpad N710 tablet
 
