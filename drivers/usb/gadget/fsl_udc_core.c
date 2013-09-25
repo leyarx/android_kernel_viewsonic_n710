@@ -254,12 +254,12 @@ static const u8 fsl_udc_test_packet[53] = {
 	/* JKKKKKKK x10, JK */
 	0xfc, 0x7e, 0xbf, 0xdf, 0xef, 0xf7, 0xfb, 0xfd, 0x7e
 };
-/*
+
 static void fsl_smb347_hc_mode_handler(struct work_struct *w)
 {
-	smb347_hc_mode_callback(fsl_charging_mode, fsl_charging_current);
+	//smb347_hc_mode_callback(fsl_charging_mode, fsl_charging_current);
 }
-*/
+
 void fsl_smb347_hc_mode_callback_work(int set_mode, int set_current)
 {
 	printk(KERN_INFO"%s: fsl_charging_mode=%d , fsl_charging_current=%d\n", __func__, set_mode, set_current);
@@ -313,13 +313,13 @@ static void cable_detection_work_handler(struct work_struct *w)
 			printk(KERN_INFO "AC adapter connect\n");
 			s_cable_info.cable_status = 0x03; //0011
 		}
-/*
+
 		if (pcb_id_version <= 0x2) {
 			fsl_smb347_hc_mode_callback_work(1,1);
 #if BATTERY_CALLBACK_ENABLED
 			battery_callback(s_cable_info.cable_status);
 #endif
-		}*/
+		}
 #if TOUCH_CALLBACK_ENABLED
 		touch_callback(s_cable_info.cable_status);
 #endif
@@ -3295,10 +3295,10 @@ static int __init fsl_udc_probe(struct platform_device *pdev)
 	/* This should done ideally if board does not have pmu interrupt */
 	if (!udc_controller->transceiver)
 		fsl_udc_clk_enable();
-/*
+
 	if (pcb_id_version <= 0x2)
 		INIT_DELAYED_WORK(&smb347_hc_mode_work, fsl_smb347_hc_mode_handler);
-*/
+
 	return 0;
 
 err_del_udc:

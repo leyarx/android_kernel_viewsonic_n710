@@ -19,7 +19,7 @@
  *
  */
 
-#define pr_fmt(fmt)	"(stc): " fmt
+#define pr_fmt(fmt)	"(stc): " fmt "\n"
 #include <linux/module.h>
 #include <linux/kernel.h>
 #include <linux/init.h>

@@ -58,6 +58,8 @@
 /* Stat LED GPIO */
 #define TEGRA_GPIO_STAT_LED		(MAX77663_GPIO_BASE + MAX77663_GPIO7)
 
+/* Power GPIO's */
+#define BQ24160_IRQ_GPIO			TEGRA_GPIO_PK2
 
 /*****************Interrupt tables ******************/
 /* External peripheral act as interrupt controller */
@@ -69,6 +71,18 @@
 
 /* UART port which is used by bluetooth*/
 #define BLUETOOTH_UART_DEV_NAME "/dev/ttyHS2"
+
+/*
+UART2- GPS
+UART3- BT (uartc)
+UART4- TP54 TP65
+
+USB1- HOST
+USB2- 3G
+USB3- HOST
+
+SDMMC3- WI-FI
+*/
 
 //int n710_charge_init(void);
 int n710_regulator_init(void);

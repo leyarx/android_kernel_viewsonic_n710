@@ -47,10 +47,22 @@
 		.debounce_interval = 10,	\
 	}
 	
+#define GPIO_IKEY(_id, _irq, _iswake, _deb)	\
+	{					\
+		.code = _id,			\
+		.gpio = -1,			\
+		.irq = _irq,			\
+		.desc = #_id,			\
+		.type = EV_KEY,			\
+		.wakeup = _iswake,		\
+		.debounce_interval = _deb,	\
+	}
+	
 static struct gpio_keys_button n710_keys[] = {
-	[0] = GPIO_KEY(KEY_POWER, PV0, 1),
-	[1] = GPIO_KEY(KEY_VOLUMEUP, PR0, 0), //PQ2
-	[2] = GPIO_KEY(KEY_VOLUMEDOWN, PR1, 0), //PQ3
+	[0] = GPIO_KEY(KEY_VOLUMEUP, PR0, 0),
+	[1] = GPIO_KEY(KEY_VOLUMEDOWN, PR1, 0),
+	[2] = GPIO_IKEY(KEY_POWER, MAX77663_IRQ_BASE + MAX77663_IRQ_ONOFF_EN0_FALLING, 1, 100),
+	[3] = GPIO_IKEY(KEY_POWER, MAX77663_IRQ_BASE + MAX77663_IRQ_ONOFF_EN0_1SEC, 1, 3000),
 };
 
 static struct gpio_keys_platform_data n710_keys_platform_data = {

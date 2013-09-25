@@ -460,25 +460,29 @@ static int __devinit max17048_probe(struct i2c_client *client,
 	struct max17048_chip *chip;
 	int ret;
 	uint16_t version;
-
+printk("max17048_probe id=%s\n",id->name);//
 	chip = kzalloc(sizeof(*chip), GFP_KERNEL);
-	if (!chip)
+	if (!chip){
+printk("max17048_probe 000 err\n"); //	
 		return -ENOMEM;
-
+		}
+printk("max17048_probe 000\n"); //
 	chip->client = client;
 	chip->model_data = client->dev.platform_data;
 	chip->ac_online = 0;
 	chip->usb_online = 0;
-
+printk("max17048_probe 001\n"); //
 	i2c_set_clientdata(client, chip);
-
+	
+printk("max17048_probe 002\n"); //
 	version = max17048_get_version(client);
+printk("max17048_probe 002 version: 0x%x\n", version); //
 	if (version != MAX17048_VERSION_NO) {
 		ret = -ENODEV;
 		goto error2;
 	}
 	dev_info(&client->dev, "MAX17048 Fuel-Gauge Ver 0x%x\n", version);
-
+printk("max17048_probe version=0x%x\n",version);//
 	ret = max17048_initialize(chip);
 	if (ret < 0) {
 		dev_err(&client->dev, "Error: Initializing fuel-gauge\n");

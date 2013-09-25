@@ -20,7 +20,7 @@
  *
  */
 
-#define pr_fmt(fmt) "(stk) :" fmt
+#define pr_fmt(fmt) "(stk): " fmt "\n"
 #include <linux/platform_device.h>
 #include <linux/jiffies.h>
 #include <linux/firmware.h>

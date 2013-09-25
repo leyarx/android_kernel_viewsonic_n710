@@ -796,7 +796,7 @@ static int bq27x00_battery_probe(struct i2c_client *client,
 	int num;
 	u16 read_data;
 	int retval = 0;
-
+printk("bq27x00_battery_probe id=%s\n",id->name); //
 	/* Get new ID for the new battery device */
 	retval = idr_pre_get(&battery_id, GFP_KERNEL);
 	if (retval == 0)
@@ -839,12 +839,12 @@ static int bq27x00_battery_probe(struct i2c_client *client,
 	}
 
 	read_data = bq27x00_read(di, BQ27x00_REG_FLAGS, false);
-
-	if (!(read_data & BQ27500_FLAG_BAT_DET)) {
+printk("bq27x00_battery_probe read_data=0x%x (0x%x)\n",read_data, read_data & BQ27500_FLAG_BAT_DET); //
+/*	if (!(read_data & BQ27500_FLAG_BAT_DET)) {
 		dev_err(&client->dev, "no battery present\n");
 		retval = -ENODEV;
 		goto batt_failed_3;
-	}
+	}*/
 
 	retval = bq27x00_powersupply_init(di);
 	if (retval < 0)
@@ -1103,7 +1103,7 @@ static inline void bq27x00_battery_platform_exit(void) {};
 static int __init bq27x00_battery_init(void)
 {
 	int ret;
-
+printk("bq27x00_battery_init\n");
 	ret = bq27x00_battery_i2c_init();
 	if (ret)
 		return ret;

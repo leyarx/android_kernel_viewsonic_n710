@@ -37,8 +37,10 @@
 #include <linux/spi-tegra.h>
 //#include <linux/nfc/pn544.h>
 #include <linux/skbuff.h>
+#include <linux/ti_wilink_st.h>
 #include <linux/regulator/consumer.h>
 //#include <linux/smb347-charger.h> //!
+#include <linux/i2c/bq24160_charger.h>
 #include <linux/max17048_battery.h>
 #include <linux/leds.h>
 //#include <linux/i2c/at24.h>
@@ -124,7 +126,7 @@ static struct tegra_utmip_config utmi_phy_config[] = {
 };
 
 /* wl128x BT, FM, GPS connectivity chip */
-/*
+/**/
 struct ti_st_plat_data kai_wilink_pdata = {
 	.nshutdown_gpio = TEGRA_GPIO_PU0,
 	.dev_name = BLUETOOTH_UART_DEV_NAME,
@@ -151,7 +153,7 @@ static noinline void __init kai_bt_st(void)
 	platform_device_register(&btwilink_device);
 	tegra_gpio_enable(TEGRA_GPIO_PU0);
 }
-*/
+
 static struct resource n710_bcm4330_rfkill_resources[] = {
 	{
 		.name   = "bcm4330_nshutdown_gpio",
@@ -202,6 +204,28 @@ static noinline void __init n710_setup_bluesleep(void)
 	tegra_gpio_enable(TEGRA_GPIO_PU6);
 	tegra_gpio_enable(TEGRA_GPIO_PU1);
 	return;
+}
+
+static struct resource kai_bluesleep_resources[] = {
+	[0] = {
+		.name = "host_wake", // "bt_host_wake"
+			.start	= TEGRA_GPIO_TO_IRQ(TEGRA_GPIO_PS6), //TEGRA_GPIO_PU6
+			.end	= TEGRA_GPIO_TO_IRQ(TEGRA_GPIO_PS6), //TEGRA_GPIO_PU6
+			.flags	= IORESOURCE_IRQ | IORESOURCE_IRQ_HIGHEDGE,
+	},
+};
+
+static struct platform_device kai_bluesleep_device = {
+	.name		= "tibluesleep",
+	.id		= 0,
+	.num_resources	= ARRAY_SIZE(kai_bluesleep_resources),
+	.resource	= kai_bluesleep_resources,
+};
+
+static noinline void __init kai_tegra_setup_tibluesleep(void)
+{
+	platform_device_register(&kai_bluesleep_device);
+	tegra_gpio_enable(TEGRA_GPIO_PS6); //TEGRA_GPIO_PU6
 }
 
 static __initdata struct tegra_clk_init_table n710_clk_init_table[] = {
@@ -289,7 +313,7 @@ static struct tegra_i2c_platform_data n710_i2c5_platform_data = {
 	.sda_gpio		= {TEGRA_GPIO_PZ7, 0},
 	.arb_recovery = arb_lost_recovery,
 };
-
+/*
 struct max17048_battery_model max17048_mdata = {
 	.rcomp          = 170,
 	.soccheck_A     = 252,
@@ -304,7 +328,7 @@ struct max17048_battery_model max17048_mdata = {
 	.valert         = 0xD4AA,
 	.ocvtest        = 55600,
 };
-
+*/
 /*
 static struct at24_platform_data eeprom_info = {
 	.byte_len	= (256*1024)/8,
@@ -313,12 +337,14 @@ static struct at24_platform_data eeprom_info = {
 	.setup		= get_mac_addr,
 };
 */
+/*
 static struct i2c_board_info n710_i2c4_max17048_board_info[] = {
 	{
 		I2C_BOARD_INFO("max17048", 0x36),
 		.platform_data = &max17048_mdata,
 	},
 };
+*/
 /*
 static struct i2c_board_info n710_eeprom_mac_add = {
 	I2C_BOARD_INFO("at24", 0x56),
@@ -333,7 +359,7 @@ static struct i2c_board_info cardhu_i2c4_bq27541_board_info[] = {
 */
 static struct i2c_board_info n710_i2c1_bq27x00_board_info[] = {
 	{
-		I2C_BOARD_INFO("bq27x00-battery", 0x55),
+		I2C_BOARD_INFO("bq27510", 0x55), //bq27x00-battery bq27500
 	}
 };
 /*
@@ -350,15 +376,24 @@ static struct i2c_board_info n710_i2c4_smb347_board_info[] = {
 	},
 };
 */
+/*
+static struct bq24160_platform_data n710_bq24160_pdata = {
+	.gpio_configure = bq24160_gpio_configure,
+};
+*/
 static struct i2c_board_info n710_i2c4_bq24160_board_info[] = {
 	{
 		I2C_BOARD_INFO("bq24160", 0x6b),
+		//.platform_data = &n710_bq24160_pdata,
+		.irq = TEGRA_GPIO_TO_IRQ(BQ24160_IRQ_GPIO),
 	},
 };
+
 static struct i2c_board_info __initdata n710_codec_aic325x_info = {
 	I2C_BOARD_INFO("tlv320aic325x-codec", 0x18),
 	.irq = TEGRA_GPIO_TO_IRQ(TEGRA_GPIO_HP_DET),
 };
+
 /*
 static struct i2c_board_info __initdata rt5640_board_info = {
 	I2C_BOARD_INFO("rt5640", 0x1c),
@@ -412,14 +447,17 @@ static void n710_i2c_init(void)
 	i2c_register_board_info(1, cardhu_i2c1_bq27541_board_info,
 		ARRAY_SIZE(cardhu_i2c1_bq27541_board_info));		
 */		
+/*
 	i2c_register_board_info(4, n710_i2c4_max17048_board_info,
 		ARRAY_SIZE(n710_i2c4_max17048_board_info));
+*/		
 /*
 	i2c_register_board_info(2, n710_nfc_board_info, 1);
 */
 }
 
 static struct platform_device *n710_uart_devices[] __initdata = {
+	&tegra_uarta_device,
 	&tegra_uartb_device,
 	&tegra_uartc_device,
 	&tegra_uartd_device,
@@ -450,7 +488,7 @@ static struct platform_device *debug_uarts[] = {
 	&debug_uarta_device,
 	&debug_uartb_device,
 	&debug_uartc_device,
-	&debug_uartd_device,
+	//&debug_uartd_device,
 	&debug_uarte_device,
 };
 
@@ -501,9 +539,10 @@ static void __init n710_uart_init(void)
 	n710_loopback_uart_pdata.parent_clk_count =
 						ARRAY_SIZE(uart_parent_clk);
 	n710_loopback_uart_pdata.is_loopback = true;
+	tegra_uarta_device.dev.platform_data = &n710_uart_pdata;
 	tegra_uartb_device.dev.platform_data = &n710_uart_pdata;
 	tegra_uartc_device.dev.platform_data = &n710_uart_pdata;
-	tegra_uartd_device.dev.platform_data = &n710_uart_pdata;
+	//tegra_uartd_device.dev.platform_data = &n710_uart_pdata;
 	/* UARTE is used for loopback test purpose */
 	tegra_uarte_device.dev.platform_data = &n710_loopback_uart_pdata;
 
@@ -886,7 +925,7 @@ printk("touch-id %d\n", touch_id);
 static struct tegra_ehci_platform_data tegra_ehci_pdata[] = {
 	[0] = {
 			.phy_config = &utmi_phy_config[0],
-			.operating_mode = TEGRA_USB_HOST,
+			.operating_mode = TEGRA_USB_HOST, 
 			.power_down_on_bus_suspend = 0,
 			.default_enable = true,
 	},
@@ -918,8 +957,7 @@ static struct usb_phy_plat_data tegra_usb_phy_pdata[] = {
 };
 
 static void n710_usb_init(void)
-{
-printk("*** n710_usb otg ehci2\n");	
+{	
 	tegra_usb_phy_init(tegra_usb_phy_pdata,
 			ARRAY_SIZE(tegra_usb_phy_pdata));
 
@@ -1000,7 +1038,7 @@ void n710_booting_info(void )
 	#define PMC_RST_STATUS_SW   (3)
 
 	reg = readl(pmc +0x1b4);
-	printk("n710_booting_info reg=%x\n",reg );
+//	printk("n710_booting_info reg=%x\n",reg );
 
 	if (reg ==PMC_RST_STATUS_SW){
 		boot_reason=PMC_RST_STATUS_SW;
@@ -1016,34 +1054,29 @@ void n710_booting_info(void )
 
 static void __init tegra_n710_init(void)
 {
-printk("*** START\n");	
-printk("*** tegra_thermal_init\n");
 	tegra_thermal_init(&thermal_data);
-printk("*** tegra_clk_init_from_table\n");
 	tegra_clk_init_from_table(n710_clk_init_table);
-printk("*** n710_pinmux_init\n");	
 	n710_pinmux_init();
+	
 printk("*** n710_misc_init\n");	
 	n710_misc_init();  // remove
-printk("*** n710_booting_info\n");	
+	
 	n710_booting_info();
-printk("*** n710_i2c_init\n");	
-	n710_i2c_init();
-printk("*** n710_spi_init\n");		
-	n710_spi_init();
-printk("*** n710_usb_init\n");		
+	n710_i2c_init();	
+	n710_spi_init();	
 	n710_usb_init();
 #ifdef CONFIG_TEGRA_EDP_LIMITS
-printk("*** n710_ti_edp_init\n");	
-/*
+/*printk("*** n710_ti_edp_init\n");	
+
 	if (grouper_query_pmic_id())
 		n710_ti_edp_init();
 	else
 */
 		n710_edp_init();
 #endif
-printk("*** n710_uart_init\n");		
+	
 	n710_uart_init();
+	
 /*
 printk("*** n710_audio_init\n");		
 	n710_audio_init();
@@ -1078,10 +1111,10 @@ printk("*** n710_keys_init\n");
 /*	*/	
 printk("*** n710_panel_init\n");	
 	n710_panel_init(); //hmmmmmmmmmmmmm
-/*	
+/*	*/
 printk("*** kai_bt_st\n");		
 	kai_bt_st();
-*/
+	kai_tegra_setup_tibluesleep();
 /*	
 printk("*** n710_nfc_init\n");	
 	n710_nfc_init();
@@ -1089,14 +1122,14 @@ printk("*** n710_nfc_init\n");
 /**/
 printk("*** n710_sensors_init\n");		
 	n710_sensors_init();
-
+/*
 printk("*** n710_setup_bluesleep\n");		
-	n710_setup_bluesleep();
+	n710_setup_bluesleep();*/
 printk("*** n710_pins_state_init\n");		
 	n710_pins_state_init();
 printk("*** n710_emc_init\n");		
 	n710_emc_init();
-//	tegra_release_bootloader_fb();
+//	tegra_release_bootloader_fb(); 
 #ifdef CONFIG_TEGRA_WDT_RECOVERY
 printk("*** tegra_wdt_recovery_init\n");	
 	tegra_wdt_recovery_init();
