@@ -760,6 +760,9 @@ static __initdata struct tegra_clk_init_table touch_clk_init_table[] = {
 };
 #endif
 #if defined(CONFIG_TOUCHSCREEN_NOVATEK)
+
+#define TOUCH_GPIO_INT      TEGRA_GPIO_PJ0 // PJ0 PN5 PZ3
+#define TOUCH_GPIO_RST      TEGRA_GPIO_PK7
 // Power pin:	TEGRA_GPIO_PH3
 // Interrupt pin: TEGRA_GPIO_PH4
 // Reset pin: TEGRA_GPIO_PH6
@@ -769,24 +772,28 @@ static __initdata struct tegra_clk_init_table touch_clk_init_table[] = {
 static struct novatek_i2c_platform_data ts_novatek_nt11003_data[] = {
         {
 			.version = 11003,               /* Use this entry for panels with */		
-			.gpio_rst = TEGRA_GPIO_PG5,
-			.gpio_irq = TEGRA_GPIO_PG4,
+			.gpio_rst = TOUCH_GPIO_RST,
+			.gpio_irq = TOUCH_GPIO_INT,
 			//.gpio_pwn = TEGRA_GPIO_PH3,
 			.irq_edge = 1,          /* 0:rising edge, 1:falling edge */
+			.touch_max_x = 30 * 64, /* 1920 */
+			.touch_max_y = 15 * 64, /* 960 */
 			.screen_max_x = 1280,
-			.screen_max_y = 800,		
+			.screen_max_y = 800,
+			.swap_xy = 1,
+			.xpol = 1,
         },
 };
 static struct i2c_board_info novatek_i2c_devices[] = {
         {
                 I2C_BOARD_INFO(NOVATEK_I2C_NAME, 0x01),//0x10
                 .platform_data = &ts_novatek_nt11003_data,
-                .irq = (INT_GPIO_BASE + TEGRA_GPIO_PH4),
+                //.irq = (INT_GPIO_BASE + TOUCH_GPIO_INT),
         },
 
 };
 #endif
-
+/*
 #if defined(CONFIG_TOUCHSCREEN_ELAN_TF_3K)
 // Interrupt pin: TEGRA_GPIO_PH4
 // Reset pin: TEGRA_GPIO_PH6
@@ -814,7 +821,7 @@ static struct i2c_board_info elan_i2c_devices[] = {
 
 };
 #endif
-
+*/
 static int novatek_touch_init(void)
 {
 /*
@@ -826,20 +833,22 @@ static int novatek_touch_init(void)
 #endif
 */
 //	tegra_gpio_enable(TEGRA_GPIO_PH3);
-	tegra_gpio_enable(TEGRA_GPIO_PH4); //TEGRA_GPIO_PH4
-	tegra_gpio_enable(TEGRA_GPIO_PH6); //TEGRA_GPIO_PH6
+	tegra_gpio_enable(TOUCH_GPIO_INT); //TEGRA_GPIO_PH4
+	tegra_gpio_enable(TOUCH_GPIO_RST); //TEGRA_GPIO_PH6
 /*
 	gpio_request(TEGRA_GPIO_PH3, "elan-pwn");
 	gpio_direction_output(TEGRA_GPIO_PH3, 1);
 */
-	gpio_request(TEGRA_GPIO_PH4, "elan-irq");
-	gpio_direction_input(TEGRA_GPIO_PH4); //TEGRA_GPIO_PG4
+	gpio_request(TOUCH_GPIO_INT, "tp_int");
+	gpio_direction_input(TOUCH_GPIO_INT); //TEGRA_GPIO_PG4
 
-	gpio_request(TEGRA_GPIO_PH6, "elan-reset");
-	gpio_direction_output(TEGRA_GPIO_PH6, 0); //TEGRA_GPIO_PG5
+	gpio_request(TOUCH_GPIO_RST, "tp_rst");
+	gpio_direction_output(TOUCH_GPIO_RST, 0); //TEGRA_GPIO_PG5
+/*
 	msleep(1);
-	gpio_set_value(TEGRA_GPIO_PH6, 1);
+	gpio_set_value(TOUCH_GPIO_RST, 1);
 	msleep(100);
+*/	
 /*	
 #if 0
 	tegra_get_board_info(&BoardInfo);
@@ -871,6 +880,28 @@ static int __init n710_touch_init(void)
 {
 //	int touch_id;
 
+	tegra_gpio_enable(TEGRA_GPIO_PH4); //60
+	tegra_gpio_enable(TEGRA_GPIO_PH5); //61
+	tegra_gpio_enable(TEGRA_GPIO_PH6); //62
+	tegra_gpio_enable(TEGRA_GPIO_PH7); //63
+	
+	gpio_request(TEGRA_GPIO_PH4, "tp_detect");
+	gpio_direction_input(TEGRA_GPIO_PH4);
+		
+	gpio_request(TEGRA_GPIO_PH5, "tp_detect0");
+	gpio_direction_input(TEGRA_GPIO_PH5);
+		
+	gpio_request(TEGRA_GPIO_PH6, "tp_detect1");
+	gpio_direction_input(TEGRA_GPIO_PH6);
+		
+	gpio_request(TEGRA_GPIO_PH7, "tp_detect2");
+	gpio_direction_input(TEGRA_GPIO_PH7);
+	
+	printk("touch detect %d %d %d %d\n",	gpio_get_value(TEGRA_GPIO_PH4),
+											gpio_get_value(TEGRA_GPIO_PH5),
+											gpio_get_value(TEGRA_GPIO_PH6),
+											gpio_get_value(TEGRA_GPIO_PH7));
+	
     return novatek_touch_init();	
 	/*	
 	tegra_gpio_enable(N710_TS_ID1);
@@ -1125,8 +1156,10 @@ printk("*** n710_sensors_init\n");
 /*
 printk("*** n710_setup_bluesleep\n");		
 	n710_setup_bluesleep();*/
+/*	
 printk("*** n710_pins_state_init\n");		
 	n710_pins_state_init();
+*/
 printk("*** n710_emc_init\n");		
 	n710_emc_init();
 //	tegra_release_bootloader_fb(); 

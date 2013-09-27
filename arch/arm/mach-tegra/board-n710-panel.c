@@ -492,7 +492,7 @@ static struct tegra_fb_data n710_fb_data = {
 	.xres		= 800,
 	.yres		= 1280,
 	.bits_per_pixel	= 32,
-//	.flags		= TEGRA_FB_FLIP_ON_PROBE,
+//	.flags		= TEGRA_FB_FLIP_ON_PROBE, 
 };
 
 static struct tegra_fb_data n710_hdmi_fb_data = {
