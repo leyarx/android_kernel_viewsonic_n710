@@ -1643,6 +1643,35 @@ int bq24160_charger_initialized(void)
 }
 EXPORT_SYMBOL_GPL(bq24160_charger_initialized);
 
+	/*
+	* The cable status:
+	* 0x00: no cable
+	* 0x01: USB cable
+	* 0x03: AC apdater
+	*/
+void battery_callback(unsigned cable_status)
+{
+	printk("%s+\n",__func__);
+	
+	switch(cable_status){
+		case 0x00:
+			bq24160_turn_off_charger();
+			break;
+		case 0x01:
+			bq24160_turn_on_charger(1);
+			break;
+		case 0x03:
+			bq24160_turn_on_charger(0);
+			break;
+		default:
+			printk("%s cable_status (%d) unknown\n",__func__, cable_status);
+			break;
+	}
+	
+	printk("%s-\n",__func__);
+}
+EXPORT_SYMBOL_GPL(battery_callback);
+
 static int __exit bq24160_remove(struct i2c_client *client)
 {
 		struct bq24160_data *bd = i2c_get_clientdata(client);

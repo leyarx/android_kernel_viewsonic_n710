@@ -17,10 +17,12 @@
  * along with this program.  If not, see <http://www.gnu.org/licenses/>.
  *
  */
-#define DEBUG
+#define DEBUG //1
 #include <linux/delay.h>
 #include <linux/i2c.h>
 #include <linux/input.h>
+	#include <linux/hrtimer.h>
+#include <linux/miscdevice.h>
 #include <linux/interrupt.h>
 #include <linux/workqueue.h>
 #include <linux/module.h>
@@ -32,6 +34,7 @@
 #endif /* CONFIG_HAS_EARLYSUSPEND */
 
 #define NAME			"kxtik"
+#define NAME_DEV		"kionix_accel"
 #define G_MAX			8096
 /* OUTPUT REGISTERS */
 #define XOUT_L			0x06
@@ -55,6 +58,8 @@
 #define FUZZ			3
 #define FLAT			3
 
+#define IOCTL_BUFFER_SIZE	64
+
 /*
  * The following table lists the maximum appropriate poll interval for each
  * available output data rate (ODR). Adjust by commenting off the ODR entry
@@ -77,8 +82,8 @@ struct kxtik_data {
 	struct i2c_client *client;
 	struct kxtik_platform_data pdata;
 	struct input_dev *input_dev;
-	struct work_struct irq_work;
-	struct workqueue_struct *irq_workqueue;
+	struct work_struct work;
+	struct workqueue_struct *workqueue;
 	unsigned int poll_interval;
 	unsigned int poll_delay;
 	u8 shift;
@@ -88,10 +93,18 @@ struct kxtik_data {
 	atomic_t acc_enabled;
 	atomic_t acc_input_event;
 
+struct hrtimer timer;
+	
 #ifdef    CONFIG_HAS_EARLYSUSPEND
 	struct early_suspend early_suspend;
 #endif /* CONFIG_HAS_EARLYSUSPEND */
 };
+/*
+* Because misc devices can not carry a pointer from driver register to
+* open, we keep this global. This limits the driver to a single instance.
+*/
+struct kxtik_data *tik_data;
+static atomic_t kxtik_dev_open_count;
 
 static int kxtik_i2c_read(struct kxtik_data *tik, u8 addr, u8 *data, int len)
 {
@@ -121,46 +134,46 @@ static void kxtik_report_acceleration_data(struct kxtik_data *tik)
 	struct input_dev *input_dev = tik->input_dev;
 	int loop = 10;
 
-	//dev_err(&tik->client->dev, "kxtik_report_acceleration_data\n");
+//dev_err(&tik->client->dev, "kxtik_report_acceleration_data\n");
 
 	while(loop) {
-	mutex_lock(&input_dev->mutex);
-	err = kxtik_i2c_read(tik, XOUT_L, (u8 *)acc_data, 6);
-	mutex_unlock(&input_dev->mutex);
-		if(err < 0){
-			loop--;
-			mdelay(1);
-		}
-		else
-			loop = 0;
+		mutex_lock(&input_dev->mutex);
+		err = kxtik_i2c_read(tik, XOUT_L, (u8 *)acc_data, 6);
+		mutex_unlock(&input_dev->mutex);
+			if(err < 0){
+				loop--;
+				mdelay(1);
+			}
+			else
+				loop = 0;
 	}
 	if (err < 0) {
 		dev_err(&tik->client->dev, "accelerometer data read failed. err(%d)\n", err);
 	}
 	else {
-	x = ((s16) le16_to_cpu(acc_data[tik->pdata.axis_map_x])) >> tik->shift;
-	y = ((s16) le16_to_cpu(acc_data[tik->pdata.axis_map_y])) >> tik->shift;
-	z = ((s16) le16_to_cpu(acc_data[tik->pdata.axis_map_z])) >> tik->shift;
+		x = ((s16) le16_to_cpu(acc_data[tik->pdata.axis_map_x])) >> tik->shift;
+		y = ((s16) le16_to_cpu(acc_data[tik->pdata.axis_map_y])) >> tik->shift;
+		z = ((s16) le16_to_cpu(acc_data[tik->pdata.axis_map_z])) >> tik->shift;
 
-	if(atomic_read(&tik->acc_input_event) > 0) {
-		input_report_abs(tik->input_dev, ABS_X, tik->pdata.negate_x ? -x : x);
-		input_report_abs(tik->input_dev, ABS_Y, tik->pdata.negate_y ? -y : y);
-		input_report_abs(tik->input_dev, ABS_Z, tik->pdata.negate_z ? -z : z);
-		input_sync(tik->input_dev);
+		if(atomic_read(&tik->acc_input_event) > 0) {
+			input_report_abs(tik->input_dev, ABS_X, tik->pdata.negate_x ? -x : x);
+			input_report_abs(tik->input_dev, ABS_Y, tik->pdata.negate_y ? -y : y);
+			input_report_abs(tik->input_dev, ABS_Z, tik->pdata.negate_z ? -z : z);
+			input_sync(tik->input_dev);
+		}
 	}
-}
 }
 
 static irqreturn_t kxtik_isr(int irq, void *dev)
 {
 	struct kxtik_data *tik = dev;
-	queue_work(tik->irq_workqueue, &tik->irq_work);
+	queue_work(tik->workqueue, &tik->work);
 	return IRQ_HANDLED;
 }
 
-static void kxtik_irq_work(struct work_struct *work)
+static void kxtik_work(struct work_struct *work) //kxtik_work
 {
-	struct kxtik_data *tik = container_of(work,	struct kxtik_data, irq_work);
+	struct kxtik_data *tik = container_of(work,	struct kxtik_data, work);
 	int err;
 	int loop = 10;
 
@@ -179,6 +192,20 @@ static void kxtik_irq_work(struct work_struct *work)
 	if (err < 0)
 		dev_err(&tik->client->dev,
 			"error clearing interrupt status: %d\n", err);
+			
+	if (!tik->client->irq) {
+		int accel_delay = 10; /* 10ms */	
+		int sesc = accel_delay / 1000;
+		int nsesc = (accel_delay % 1000) * 1000000;
+		hrtimer_start(&tik->timer, ktime_set(sesc, nsesc), HRTIMER_MODE_REL);	
+	}			
+}
+
+static enum hrtimer_restart kxtik_timer_func(struct hrtimer *timer)
+{
+	struct kxtik_data *tik = container_of(timer, struct kxtik_data, timer);	
+	queue_work(tik->workqueue, &tik->work);
+	return HRTIMER_NORESTART;
 }
 
 static int kxtik_update_g_range(struct kxtik_data *tik, u8 new_g_range)
@@ -215,7 +242,7 @@ static int kxtik_update_odr(struct kxtik_data *tik, unsigned int poll_interval)
 		if (poll_interval < kxtik_odr_table[i].cutoff)
 			break;
 	}
-
+printk("kxtik_update_odr. poll_interval = %d\n", poll_interval);
 	/* Do not need to update DATA_CTRL_REG register if the ODR is not changed */
 	if(tik->data_ctrl == odr)
 		return 0;
@@ -297,6 +324,9 @@ static int kxtik_operate(struct kxtik_data *tik)
 {
 	int err;
 
+	if (!tik->client->irq)
+		hrtimer_start(&tik->timer, ktime_set(1, 0), HRTIMER_MODE_REL);
+	
 	err = i2c_smbus_write_byte_data(tik->client, CTRL_REG1, tik->ctrl_reg1 | PC1_ON);
 	if (err < 0)
 		return err;
@@ -308,6 +338,9 @@ static int kxtik_standby(struct kxtik_data *tik)
 {
 	int err;
 
+	if (!tik->client->irq)
+		hrtimer_cancel(&tik->timer);
+	
 	err = i2c_smbus_write_byte_data(tik->client, CTRL_REG1, 0);
 	if (err < 0)
 		return err;
@@ -318,11 +351,11 @@ static int kxtik_standby(struct kxtik_data *tik)
 static int kxtik_enable(struct kxtik_data *tik)
 {
 	int err;
-
-		err = kxtik_operate(tik);
-		if (err < 0)
+	
+	err = kxtik_operate(tik);
+	if (err < 0)
 		dev_err(&tik->client->dev, "operate mode failed\n");
-
+		
 	atomic_inc(&tik->acc_enabled);
 	printk("kxtik_enable. Count = %d\n", atomic_read(&tik->acc_enabled));
 	return 0;
@@ -526,7 +559,7 @@ void kxtik_earlysuspend_suspend(struct early_suspend *h)
 
 	err = kxtik_standby(tik);
 	if (err < 0)
-	dev_err(&tik->client->dev, "earlysuspend failed to suspend\n");
+		dev_err(&tik->client->dev, "earlysuspend failed to suspend\n");
 
 	return;
 }
@@ -545,6 +578,77 @@ void kxtik_earlysuspend_resume(struct early_suspend *h)
 	return;
 }
 #endif
+
+static int kxtik_open(struct inode *inode, struct file *file)
+{
+	int ret = -1;
+	file->private_data = tik_data;
+	struct kxtik_data *tik = file->private_data;
+	
+	if(kxtik_enable(tik) < 0)
+		return ret;
+
+	atomic_inc(&kxtik_dev_open_count);
+
+	#if defined DEBUG //&& DEBUG == 1
+	dev_info(&tik->client->dev, "%s: opened %d times\n",\
+			__FUNCTION__, atomic_read(&kxtik_dev_open_count));
+	#endif
+
+	return 0;
+}
+
+static int kxtik_release(struct inode *inode, struct file *file)
+{
+	struct kxtik_data *tik = file->private_data;
+	int open_count;
+
+	atomic_dec(&kxtik_dev_open_count);
+	open_count = (int)atomic_read(&kxtik_dev_open_count);
+
+	if(open_count == 0)
+	kxtik_disable(tik);
+
+	#if defined DEBUG //&& DEBUG == 1
+	dev_info(&tik->client->dev, "%s: opened %d times\n",\
+	__FUNCTION__, atomic_read(&kxtik_dev_open_count));
+	#endif
+
+	return 0;
+}
+
+static int kxtik_ioctl(struct inode *inode, struct file *file, unsigned int cmd, unsigned long arg)
+{
+	struct kxtik_data *tik = file->private_data;
+	char buffer[IOCTL_BUFFER_SIZE];
+	void __user *data;
+	u8 reg_buffer = 0x00;
+	const u8 set = 0xFF, unset = 0x00;
+	int retval=0, val_int=0;
+	short val_short=0;
+	
+	#if defined DEBUG //&& DEBUG == 1
+	dev_info(&tik->client->dev, "%s: cmd 0x%x\n",\
+			__FUNCTION__, cmd);
+	#endif
+	/* TODO: add ioctl commands */
+	retval = -EFAULT;
+	
+	return retval;
+}
+
+static struct file_operations kxtik_fops = {
+	.owner = THIS_MODULE,
+	.open = kxtik_open,
+	.release = kxtik_release,
+	.unlocked_ioctl = kxtik_ioctl,
+};
+
+static struct miscdevice kxtik_device = {
+	.minor = MISC_DYNAMIC_MINOR,
+	.name = NAME_DEV,
+	.fops = &kxtik_fops,
+};
 
 static int __devinit kxtik_probe(struct i2c_client *client,
 				 const struct i2c_device_id *id)
@@ -574,6 +678,8 @@ static int __devinit kxtik_probe(struct i2c_client *client,
 	tik->client = client;
 	tik->pdata = *pdata;
 
+	tik_data = tik;
+	
 	err = kxtik_device_power_on(tik);
 	if (err < 0)
 		goto err_free_mem;
@@ -607,13 +713,23 @@ static int __devinit kxtik_probe(struct i2c_client *client,
 		goto err_pdata_exit;
 	}
 
-	if (client->irq) {
+//	if (client->irq) {
 		err = kxtik_setup_input_device(tik);
 		if (err)
 			goto err_pdata_exit;
 
-		tik->irq_workqueue = create_workqueue("KXTIK Workqueue");
-		INIT_WORK(&tik->irq_work, kxtik_irq_work);
+		err = misc_register(&kxtik_device);
+		if(err) {
+			dev_err(&client->dev, "misc. device failed to register.\n");
+			goto err_destroy_input;
+		}	
+		
+	tik->workqueue = create_workqueue("KXTIK Workqueue");
+	INIT_WORK(&tik->work, kxtik_work);	
+	
+	if (client->irq) {			
+//		tik->workqueue = create_workqueue("KXTIK Workqueue");
+//		INIT_WORK(&tik->work, kxtik_work);
 		/* If in irq mode, populate INT_CTRL_REG1 and enable DRDY. */
 		tik->int_ctrl |= KXTIK_IEN | KXTIK_IEA;
 		tik->ctrl_reg1 |= DRDYE;
@@ -623,27 +739,31 @@ static int __devinit kxtik_probe(struct i2c_client *client,
 					   "kxtik-irq", tik);
 		if (err) {
 			dev_err(&client->dev, "request irq failed: %d\n", err);
-			goto err_destroy_input;
+			goto err_destroy_misc;
 		}
+	} else {
+		hrtimer_init(&tik->timer, CLOCK_MONOTONIC, HRTIMER_MODE_REL);
+		tik->timer.function = kxtik_timer_func;
+	}
 
 		err = kxtik_power_on_init(tik);
 		if (err) {
 			dev_err(&client->dev, "power on init failed: %d\n", err);
-			goto err_free_irq;
+			goto err_free_irq_or_timer;
 		}
 
 		err = sysfs_create_group(&client->dev.kobj, &kxtik_attribute_group);
 		if (err) {
 			dev_err(&client->dev, "sysfs create failed: %d\n", err);
-			goto err_free_irq;
+			goto err_free_irq_or_timer;
 		}
-
+/*
 	} else {
 		dev_err(&client->dev, "irq not defined\n");
 
 		goto err_pdata_exit;
 	}
-
+*/
 #ifdef    CONFIG_HAS_EARLYSUSPEND
 	tik->early_suspend.level = EARLY_SUSPEND_LEVEL_BLANK_SCREEN + 1;
 	tik->early_suspend.suspend = kxtik_earlysuspend_suspend;
@@ -651,13 +771,18 @@ static int __devinit kxtik_probe(struct i2c_client *client,
 	register_early_suspend(&tik->early_suspend);
 #endif /* CONFIG_HAS_EARLYSUSPEND */
 
+	printk(KERN_INFO "%s: Start KXTIK in %s mode\n", __func__, client->irq ? "interrupt" : "polling");
+
 	return 0;
 
-err_free_irq:
-if (client->irq) {
-	free_irq(client->irq, tik);
-	destroy_workqueue(tik->irq_workqueue);
-}
+err_free_irq_or_timer:
+	if (client->irq)
+		free_irq(client->irq, tik);
+	else
+		hrtimer_cancel(&tik->timer);
+err_destroy_misc:
+	destroy_workqueue(tik->workqueue);
+	misc_deregister(&kxtik_device);	
 err_destroy_input:
 	input_unregister_device(tik->input_dev);
 err_pdata_exit:
@@ -678,11 +803,13 @@ static int __devexit kxtik_remove(struct i2c_client *client)
 	unregister_early_suspend(&tik->early_suspend);
 #endif /* CONFIG_HAS_EARLYSUSPEND */
 	sysfs_remove_group(&client->dev.kobj, &kxtik_attribute_group);
-	if (client->irq) {
+	if (client->irq)
 		free_irq(client->irq, tik);
-		destroy_workqueue(tik->irq_workqueue);
-	}
+	else
+		hrtimer_cancel(&tik->timer);
+	destroy_workqueue(tik->workqueue);	
 	input_unregister_device(tik->input_dev);
+	misc_deregister(&kxtik_device);
 	if (tik->pdata.exit)
 		tik->pdata.exit();
 	kxtik_device_power_off(tik);
@@ -710,12 +837,16 @@ static struct i2c_driver kxtik_driver = {
 
 static int __init kxtik_init(void)
 {
+	atomic_set(&kxtik_dev_open_count, 0);
+		
 	return i2c_add_driver(&kxtik_driver);
 }
 module_init(kxtik_init);
 
 static void __exit kxtik_exit(void)
 {
+	atomic_set(&kxtik_dev_open_count, 0);
+
 	i2c_del_driver(&kxtik_driver);
 }
 module_exit(kxtik_exit);

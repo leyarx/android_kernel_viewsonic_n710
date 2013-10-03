@@ -446,8 +446,13 @@ static int n710_nct1008_init(void)
 #ifdef CONFIG_INPUT_KXTIK
 static struct kxtik_platform_data n710_kxtik_pdata = {
 	.min_interval = 66,
+	.axis_map_x = 0,
+	.axis_map_y = 1,
+	.axis_map_z = 2,
+//	.negate_x = 1,
+	.negate_z = 1,
 	.res_12bit = RES_12BIT,
-	.g_range = KXTIK_G_8G,
+	.g_range = KXTIK_G_2G,
 //	.data_odr_init = ODR200F,
 };
 #endif
@@ -473,7 +478,7 @@ static struct i2c_board_info n710_i2c0_board_info[] = {
 	{
 		I2C_BOARD_INFO("kxtik", 0x0F), //kxtik
 		.platform_data = &n710_kxtik_pdata,
-		.irq = TEGRA_GPIO_TO_IRQ(0), /* Disable ACCELIRQ: TEGRA_GPIO_PN4 */
+//		.irq = TEGRA_GPIO_TO_IRQ(0), // Disable ACCELIRQ: TEGRA_GPIO_PN4
 	},
 #endif
 #ifdef CONFIG_SENSORS_AK8975

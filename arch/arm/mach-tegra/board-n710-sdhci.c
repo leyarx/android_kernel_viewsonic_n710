@@ -17,12 +17,12 @@
 
 #include <linux/resource.h>
 #include <linux/platform_device.h>
-#include <linux/wlan_plat.h>
 #include <linux/delay.h>
 #include <linux/gpio.h>
 #include <linux/clk.h>
 #include <linux/err.h>
 #include <linux/mmc/host.h>
+#include <linux/wl12xx.h>
 
 #include <asm/mach-types.h>
 #include <mach/irqs.h>
@@ -34,41 +34,22 @@
 #include "board-n710.h"
 
 #define KAI_SD_CD	TEGRA_GPIO_PI5
-#define N710_WLAN_PWR	TEGRA_GPIO_PD4
-#define N710_WLAN_RST	TEGRA_GPIO_PD3
-#define N710_WLAN_WOW	TEGRA_GPIO_PO4
+#define KAI_WLAN_EN	TEGRA_GPIO_PD4
+#define KAI_WLAN_IRQ	TEGRA_GPIO_PV1
 
 static void (*wifi_status_cb)(int card_present, void *dev_id);
 static void *wifi_status_cb_devid;
+static int kai_wifi_power(int power_on);
+static int kai_wifi_set_carddetect(int val);
 static int n710_wifi_status_register(void (*callback)(int , void *),void *);
 
-static int n710_wifi_reset(int on);
-static int n710_wifi_power(int on);
-static int n710_wifi_set_carddetect(int val);
 
-static struct wifi_platform_data n710_wifi_control = {
-	.set_power	= n710_wifi_power,
-	.set_reset	= n710_wifi_reset,
-	.set_carddetect	= n710_wifi_set_carddetect,
-};
-
-static struct resource wifi_resource[] = {
-	[0] = {
-		.name	= "bcmdhd_wlan_irq",
-		.start	= TEGRA_GPIO_TO_IRQ(TEGRA_GPIO_PO4),
-		.end	= TEGRA_GPIO_TO_IRQ(TEGRA_GPIO_PO4),
-		.flags	= IORESOURCE_IRQ | IORESOURCE_IRQ_HIGHLEVEL | IORESOURCE_IRQ_SHAREABLE,
-	},
-};
-
-static struct platform_device n710_wifi_device = {
-	.name		= "bcmdhd_wlan",
-	.id		= 1,
-	.num_resources	= 1,
-	.resource	= wifi_resource,
-	.dev		= {
-		.platform_data = &n710_wifi_control,
-	},
+static struct wl12xx_platform_data kai_wlan_data __initdata = {
+	.irq = TEGRA_GPIO_TO_IRQ(KAI_WLAN_IRQ),
+	.board_ref_clock = WL12XX_REFCLOCK_26,
+	.board_tcxo_clock = 1,
+	.set_power = kai_wifi_power,
+	.set_carddetect = kai_wifi_set_carddetect,
 };
 
 static struct resource sdhci_resource0[] = {
@@ -120,8 +101,8 @@ static struct embedded_sdio_data embedded_sdio_data2 = {
 		.high_speed     = 1,
 	},
 	.cis  = {
-		.vendor         = 0x02d0,
-		.device         = 0x4330,
+		.vendor         = 0x0097,
+		.device         = 0x4076,
 	},
 };
 
@@ -142,7 +123,7 @@ static struct tegra_sdhci_platform_data tegra_sdhci_platform_data0 = {
 static struct tegra_sdhci_platform_data tegra_sdhci_platform_data2 = {
 	.mmc_data = {
 		.register_status_notify	= n710_wifi_status_register,
-		.embedded_sdio = &embedded_sdio_data2,
+		/* .embedded_sdio = &embedded_sdio_data2, */
 		.built_in = 1,
 	},
 	.cd_gpio = -1,
@@ -219,7 +200,8 @@ static int n710_wifi_status_register(
 	wifi_status_cb_devid = dev_id;
 	return 0;
 }
-static int n710_wifi_set_carddetect(int val)
+
+static int kai_wifi_set_carddetect(int val)
 {
 	pr_debug("%s: %d\n", __func__, val);
 	if (wifi_status_cb)
@@ -229,61 +211,59 @@ static int n710_wifi_set_carddetect(int val)
 	return 0;
 }
 
-static int n710_wifi_power(int on)
+static int kai_wifi_power(int power_on)
 {
-	pr_err("Powering %s wifi\n", (on ? "on" : "off"));
+	pr_err("Powering %s wifi\n", (power_on ? "on" : "off"));
 
-	gpio_set_value(N710_WLAN_PWR, on);
-	mdelay(100);
-	gpio_set_value(N710_WLAN_RST, on);
-	mdelay(200);
+	if (power_on) {
+		gpio_set_value(KAI_WLAN_EN, 1);
+		mdelay(15);
+		gpio_set_value(KAI_WLAN_EN, 0);
+		mdelay(1);
+		gpio_set_value(KAI_WLAN_EN, 1);
+		mdelay(70);
+	} else {
+		gpio_set_value(KAI_WLAN_EN, 0);
+	}
 
 	return 0;
 }
 
-static int n710_wifi_reset(int on)
-{
-	pr_err("%s: do nothing\n", __func__);
-	return 0;
-}
-
-static int __init n710_wifi_init(void)
+static int __init kai_wifi_init(void)
 {
 	int rc;
 
-	rc = gpio_request(N710_WLAN_PWR, "wlan_power");
+	rc = gpio_request(KAI_WLAN_EN, "wl12xx-power");
 	if (rc)
-		pr_err("WLAN_PWR gpio request failed:%d\n", rc);
-	rc = gpio_request(N710_WLAN_RST, "wlan_rst");
-	if (rc)
-		pr_err("WLAN_RST gpio request failed:%d\n", rc);
-	rc = gpio_request(N710_WLAN_WOW, "bcmsdh_sdmmc");
-	if (rc)
-		pr_err("WLAN_WOW gpio request failed:%d\n", rc);
+		pr_err("WLAN_EN gpio request failed:%d\n", rc);
 
-	tegra_gpio_enable(N710_WLAN_PWR);
-	tegra_gpio_enable(N710_WLAN_RST);
-	tegra_gpio_enable(N710_WLAN_WOW);
+	rc = gpio_request(KAI_WLAN_IRQ, "wl12xx");
+	if (rc)
+		pr_err("WLAN_IRQ gpio request failed:%d\n", rc);
 
-	rc = gpio_direction_output(N710_WLAN_PWR, 0);
-	if (rc)
-		pr_err("WLAN_PWR gpio direction configuration failed:%d\n", rc);
-	gpio_direction_output(N710_WLAN_RST, 0);
-	if (rc)
-		pr_err("WLAN_RST gpio direction configuration failed:%d\n", rc);
-	rc = gpio_direction_input(N710_WLAN_WOW);
-	if (rc)
-		pr_err("WLAN_WOW gpio direction configuration failed:%d\n", rc);
+	tegra_gpio_enable(KAI_WLAN_EN);
+	tegra_gpio_enable(KAI_WLAN_IRQ);
 
-	platform_device_register(&n710_wifi_device);
+	rc = gpio_direction_output(KAI_WLAN_EN, 0);
+	if (rc)
+		pr_err("WLAN_EN gpio direction configuration failed:%d\n", rc);
+
+	rc = gpio_direction_input(KAI_WLAN_IRQ);
+	if (rc)
+		pr_err("WLAN_IRQ gpio direction configuration failed:%d\n", rc);
+
+	if (wl12xx_set_platform_data(&kai_wlan_data))
+		pr_err("Error setting wl12xx data\n");
+
 	return 0;
 }
 
 int __init n710_sdhci_init(void)
 {
 	platform_device_register(&tegra_sdhci_device3);
-//	platform_device_register(&tegra_sdhci_device2);
+	platform_device_register(&tegra_sdhci_device2);
 	platform_device_register(&tegra_sdhci_device0);
-//	n710_wifi_init();
+	
+	kai_wifi_init();
 	return 0;
 }

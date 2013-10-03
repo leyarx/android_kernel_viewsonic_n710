@@ -131,7 +131,7 @@ struct ti_st_plat_data kai_wilink_pdata = {
 	.nshutdown_gpio = TEGRA_GPIO_PU0,
 	.dev_name = BLUETOOTH_UART_DEV_NAME,
 	.flow_cntrl = 1,
-	.baud_rate = 3000000,
+	.baud_rate = 3000000, //3686400,
 };
 
 static struct platform_device wl128x_device = {
@@ -153,7 +153,7 @@ static noinline void __init kai_bt_st(void)
 	platform_device_register(&btwilink_device);
 	tegra_gpio_enable(TEGRA_GPIO_PU0);
 }
-
+/*
 static struct resource n710_bcm4330_rfkill_resources[] = {
 	{
 		.name   = "bcm4330_nshutdown_gpio",
@@ -205,7 +205,7 @@ static noinline void __init n710_setup_bluesleep(void)
 	tegra_gpio_enable(TEGRA_GPIO_PU1);
 	return;
 }
-
+*/
 static struct resource kai_bluesleep_resources[] = {
 	[0] = {
 		.name = "host_wake", // "bt_host_wake"
@@ -378,13 +378,15 @@ static struct i2c_board_info n710_i2c4_smb347_board_info[] = {
 */
 /*
 static struct bq24160_platform_data n710_bq24160_pdata = {
-	.gpio_configure = bq24160_gpio_configure,
+	.name = BQ24160_NAME,
+	.support_boot_charging = 1,
+	//.gpio_configure = bq24160_gpio_configure,
 };
 */
 static struct i2c_board_info n710_i2c4_bq24160_board_info[] = {
 	{
 		I2C_BOARD_INFO("bq24160", 0x6b),
-		//.platform_data = &n710_bq24160_pdata,
+		/* .platform_data = &n710_bq24160_pdata, */
 		.irq = TEGRA_GPIO_TO_IRQ(BQ24160_IRQ_GPIO),
 	},
 };
@@ -736,7 +738,7 @@ static struct platform_device *n710_devices[] __initdata = {
 	&tegra_spdif_device,
 	&spdif_dit_device,
 	&bluetooth_dit_device,
-	&n710_bcm4330_rfkill_device,
+//	&n710_bcm4330_rfkill_device,
 	&tegra_pcm_device,
 	&n710_audio_device,
 	&n710_leds_gpio_device,
@@ -998,7 +1000,7 @@ static void n710_usb_init(void)
 	tegra_ehci2_device.dev.platform_data = &tegra_ehci_pdata[1];
 	platform_device_register(&tegra_ehci2_device);
 }
-
+/*
 static void n710_modem_init(void)
 {
 	int ret;
@@ -1031,10 +1033,10 @@ static void n710_modem_init(void)
 		gpio_direction_output(TEGRA_GPIO_MODEM_RSVD2, 1);
 
 }
-
+*/
 #else
 static void n710_usb_init(void) { }
-static void n710_modem_init(void) { }
+//static void n710_modem_init(void) { }
 #endif
 /*
 static void n710_audio_init(void)
@@ -1046,13 +1048,13 @@ static void n710_audio_init(void)
 	n710_audio_pdata.codec_name = "rt5640.4-001c";
 	n710_audio_pdata.codec_dai_name = "rt5640-aif1";
 }
-*/
+
 static void n710_gps_init(void)
 {
 	tegra_gpio_enable(TEGRA_GPIO_PU2);
 	tegra_gpio_enable(TEGRA_GPIO_PU3);
 }
-/*
+
 static void n710_nfc_init(void)
 {
 	tegra_gpio_enable(TEGRA_GPIO_PX0);
