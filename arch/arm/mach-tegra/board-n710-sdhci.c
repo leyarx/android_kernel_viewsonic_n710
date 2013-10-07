@@ -110,6 +110,7 @@ static struct tegra_sdhci_platform_data tegra_sdhci_platform_data0 = {
 	.cd_gpio = KAI_SD_CD,
 	.wp_gpio = -1,
 	.power_gpio = -1,
+	
 /*	.tap_delay = 6,
 	.is_voltage_switch_supported = true,
 	.vdd_rail_name = "vddio_sdmmc1",
@@ -261,7 +262,7 @@ static int __init kai_wifi_init(void)
 int __init n710_sdhci_init(void)
 {
 	platform_device_register(&tegra_sdhci_device3);
-	platform_device_register(&tegra_sdhci_device2);
+	platform_device_register(&tegra_sdhci_device2);	
 	platform_device_register(&tegra_sdhci_device0);
 	
 	kai_wifi_init();

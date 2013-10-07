@@ -1161,15 +1161,12 @@ printk("*** n710_setup_bluesleep\n");
 /*	
 printk("*** n710_pins_state_init\n");		
 	n710_pins_state_init();
-*/
-printk("*** n710_emc_init\n");		
+*/	
 	n710_emc_init();
 //	tegra_release_bootloader_fb(); 
 #ifdef CONFIG_TEGRA_WDT_RECOVERY
-printk("*** tegra_wdt_recovery_init\n");	
 	tegra_wdt_recovery_init();
 #endif
-printk("*** END\n");	
 }
 
 static void __init n710_ramconsole_reserve(unsigned long size)

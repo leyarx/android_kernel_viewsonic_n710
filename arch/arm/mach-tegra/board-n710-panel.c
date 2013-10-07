@@ -50,7 +50,7 @@
 
 /* common pins( backlight ) for all display boards */
 #define n710_bl_enb			TEGRA_GPIO_PH3
-#define n710_bl_pwm			TEGRA_GPIO_PH0
+#define n710_bl_pwm			TEGRA_GPIO_PH0 // ????
 #define n710_hdmi_hpd			TEGRA_GPIO_PN7
 
 #ifdef CONFIG_TEGRA_DC

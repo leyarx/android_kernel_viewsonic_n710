@@ -41,7 +41,7 @@
 #define FUNCDBG(msg)
 #endif
 
-#define AK8975DRV_DATA_DBG 1 //0
+#define AK8975DRV_DATA_DBG 0
 #define MAX_FAILURE_COUNT 10
 
 #define AKM_ACCEL_ITEMS 3
@@ -285,7 +285,7 @@ static void akm8975_ecs_report_value(struct akm8975_data *akm, short *rbuf)
 		input_report_abs(data->input_dev, ABS_RY, rbuf[10]);
 		input_report_abs(data->input_dev, ABS_RZ, rbuf[11]);
 //		input_report_abs(data->input_dev, ABS_RUDDER, rbuf[4]);
-		input_report_abs(data->input_dev, ABS_WHEEL, rbuf[4]);
+//		input_report_abs(data->input_dev, ABS_WHEEL, rbuf[4]);
 	}
 
 	/* Report acceleration sensor information */
@@ -294,7 +294,7 @@ static void akm8975_ecs_report_value(struct akm8975_data *akm, short *rbuf)
 		input_report_abs(data->input_dev, ABS_X, rbuf[5]);
 		input_report_abs(data->input_dev, ABS_Y, rbuf[6]);
 		input_report_abs(data->input_dev, ABS_Z, rbuf[7]);
-//		input_report_abs(data->input_dev, ABS_WHEEL, rbuf[4]);
+		input_report_abs(data->input_dev, ABS_WHEEL, rbuf[4]);
 	}
 
 	/* Report temperature information */

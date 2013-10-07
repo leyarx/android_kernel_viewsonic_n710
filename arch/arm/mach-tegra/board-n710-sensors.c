@@ -1,5 +1,3 @@
-
-
 /*
  * arch/arm/mach-tegra/board-n710-sensors.c
  *
@@ -446,14 +444,13 @@ static int n710_nct1008_init(void)
 #ifdef CONFIG_INPUT_KXTIK
 static struct kxtik_platform_data n710_kxtik_pdata = {
 	.min_interval = 66,
-	.axis_map_x = 0,
-	.axis_map_y = 1,
+	.axis_map_x = 1,
+	.axis_map_y = 0,
 	.axis_map_z = 2,
 //	.negate_x = 1,
-	.negate_z = 1,
+//	.negate_z = 1,
 	.res_12bit = RES_12BIT,
 	.g_range = KXTIK_G_2G,
-//	.data_odr_init = ODR200F,
 };
 #endif
 #ifdef CONFIG_SENSORS_AK8975
