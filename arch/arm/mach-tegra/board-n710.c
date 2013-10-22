@@ -1194,3 +1194,15 @@ MACHINE_START(N710, "N710")
 	.timer		= &tegra_timer,
 	.init_machine	= tegra_n710_init,
 MACHINE_END
+
+#ifdef CONFIG_MACH_QC750
+MACHINE_START(QC750, "QC750")
+	.boot_params	= 0x80000100,
+	.map_io		= tegra_map_common_io,
+	.reserve	= tegra_n710_reserve,
+	.init_early	= tegra_init_early,
+	.init_irq	= tegra_init_irq,
+	.timer		= &tegra_timer,
+	.init_machine	= tegra_n710_init,
+MACHINE_END
+#endif
