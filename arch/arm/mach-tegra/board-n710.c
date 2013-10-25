@@ -58,7 +58,6 @@
 #include <asm/mach/arch.h>
 #include <mach/usb_phy.h>
 #include <mach/thermal.h>
-#include <mach/board-n710-misc.h>
 #include <mach/tegra_fiq_debugger.h>
 
 #include "board.h"
@@ -1071,7 +1070,6 @@ void n710_booting_info(void )
 	#define PMC_RST_STATUS_SW   (3)
 
 	reg = readl(pmc +0x1b4);
-//	printk("n710_booting_info reg=%x\n",reg );
 
 	if (reg ==PMC_RST_STATUS_SW){
 		boot_reason=PMC_RST_STATUS_SW;
@@ -1091,25 +1089,15 @@ static void __init tegra_n710_init(void)
 	tegra_clk_init_from_table(n710_clk_init_table);
 	n710_pinmux_init();
 	
-printk("*** n710_misc_init\n");	
-	n710_misc_init();  // remove
-	
 	n710_booting_info();
 	n710_i2c_init();	
 	n710_spi_init();	
 	n710_usb_init();
 #ifdef CONFIG_TEGRA_EDP_LIMITS
-/*printk("*** n710_ti_edp_init\n");	
-
-	if (grouper_query_pmic_id())
-		n710_ti_edp_init();
-	else
-*/
-		n710_edp_init();
+	n710_edp_init();
 #endif
 	
 	n710_uart_init();
-	
 /*
 printk("*** n710_audio_init\n");		
 	n710_audio_init();
@@ -1120,19 +1108,9 @@ printk("*** tegra_ram_console_debug_init\n");
 	tegra_ram_console_debug_init();
 printk("*** n710_sdhci_init\n");	
 	n710_sdhci_init();
-printk("*** regulator_init (grouper_query_pmic_id %d)\n", grouper_query_pmic_id());	
-/*
-	if (grouper_query_pmic_id()) {
-		n710_ti_regulator_init();
-		n710_ti_suspend_init();
-	} else {
-*/	
-		n710_regulator_init();
-		n710_suspend_init();
-/*		
-	}
-*/
-
+printk("*** regulator_init\n");	
+	n710_regulator_init();
+	n710_suspend_init();
 printk("*** n710_touch_init\n");	
 	n710_touch_init();
 /*
@@ -1140,11 +1118,9 @@ printk("*** n710_gps_init\n");
 	n710_gps_init();
 */	
 printk("*** n710_keys_init\n");	
-	n710_keys_init();
-/*	*/	
+	n710_keys_init();	
 printk("*** n710_panel_init\n");	
-	n710_panel_init(); //hmmmmmmmmmmmmm
-/*	*/
+	n710_panel_init();
 printk("*** kai_bt_st\n");		
 	kai_bt_st();
 	kai_tegra_setup_tibluesleep();

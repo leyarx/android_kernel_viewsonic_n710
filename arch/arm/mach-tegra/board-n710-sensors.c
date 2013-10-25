@@ -40,7 +40,6 @@
 #include <linux/nct1008.h>
 #include <mach/thermal.h>
 #include <linux/slab.h>
-#include <mach/board-n710-misc.h>
 
 #define CAM1_LDO_EN_GPIO		TEGRA_GPIO_PR6
 #define FRONT_YUV_SENSOR_RST_GPIO	TEGRA_GPIO_PO0
@@ -49,7 +48,7 @@ static struct regulator *n710_1v8_ldo5;
 static struct regulator *n710_1v8_cam3;
 static struct regulator *n710_vdd_cam3;
 
-static unsigned int pmic_id;
+//static unsigned int pmic_id;
 /*
 static const struct i2c_board_info cardhu_i2c1_board_info_al3010[] = {
 	{

@@ -2513,7 +2513,8 @@ struct tegra_usb_phy *tegra_usb_phy_open(int instance, void __iomem *regs,
 	int reset_gpio, enable_gpio;
 #endif
 	unsigned int pcb_id_version;
-	int pmu_hw = grouper_query_pmic_id();
+//	int pmu_hw = grouper_query_pmic_id();
+	int pmu_hw = GROUPER_PMIC_MAXIM;
 
 	phy = kzalloc(sizeof(struct tegra_usb_phy), GFP_KERNEL);
 	if (!phy)
@@ -2576,7 +2577,8 @@ struct tegra_usb_phy *tegra_usb_phy_open(int instance, void __iomem *regs,
 		err = utmip_pad_open(phy);
 		phy->xcvr_setup_value = tegra_phy_xcvr_setup_value(phy->config);
 		if (phy->instance == 0) {
-			pcb_id_version = grouper_query_pcba_revision();
+//			pcb_id_version = grouper_query_pcba_revision();
+			pcb_id_version = 0x2;
 			if (pcb_id_version > 0x2)
 				phy->xcvr_setup_value = phy->xcvr_setup_value + 4;
 			else

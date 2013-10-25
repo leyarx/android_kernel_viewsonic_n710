@@ -88,7 +88,7 @@ static struct usb_sys_interface *usb_sys_regs;
 /* it is initialized in probe()  */
 static struct fsl_udc *udc_controller = NULL;
 
-extern unsigned int grouper_query_pcba_revision();
+//extern unsigned int grouper_query_pcba_revision();
 unsigned int pcb_id_version = 0;
 EXPORT_SYMBOL(pcb_id_version);
 
@@ -111,7 +111,8 @@ static struct cable_info s_cable_info;
 
 void read_hw_version(void)
 {
-	pcb_id_version = grouper_query_pcba_revision();
+//	pcb_id_version = grouper_query_pcba_revision();
+	pcb_id_version = 0x2;
 	printk(KERN_INFO "%s %#X\n", __func__, pcb_id_version);
 }
 
