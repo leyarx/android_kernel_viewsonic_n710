@@ -258,12 +258,12 @@ static int aic3xxx_cfw_setmode_cfg_u(struct cfw_state *ps, int mode, int cfg)
 	/* Apply entry sequence if present */
 	aic3xxx_cfw_dlcmds(ps, pmode->entry);
 
-	DBG("setmode_cfg: DONE (mode=%d pfw=%d ovly=%d cfg=%d)",
+	DBG("setmode_cfg: DONE (mode=%d pfw=%d ovly=%d cfg=%d)\n",
 	    ps->cur_mode, ps->cur_pfw, ps->cur_ovly, ps->cur_cfg);
 	return 0;
 
 err:
-	DBG("Failed to set firmware mode");
+	DBG("Failed to set firmware mode\n");
 	return -EINVAL;
 }
 
@@ -286,7 +286,7 @@ static int aic3xxx_cfw_transition_u(struct cfw_state *ps, char *ttype)
 	for (i = 0; i < CFW_TRN_N; ++i) {
 		if (!strcasecmp(ttype, cfw_transition_id[i])) {
 			struct cfw_transition *pt = ps->pjt->transition[i];
-			DBG("Sending transition %s[%d]", ttype, i);
+			DBG("Sending transition %s[%d]\n", ttype, i);
 			if (pt)
 				aic3xxx_cfw_dlcmds(ps, pt->block);
 			return 0;
@@ -317,7 +317,7 @@ static int aic3xxx_cfw_set_pll_u(struct cfw_state *ps, int asi)
 		return -EINVAL;
 	pll_id = pjt->mode[ps->cur_mode]->pll;
 	if (ps->cur_pll != pll_id) {
-		DBG("Re-configuring PLL: %s==>%d", pjt->pll[pll_id]->name,
+		DBG("Re-configuring PLL: %s==>%d\n", pjt->pll[pll_id]->name,
 		    pll_id);
 		aic3xxx_cfw_dlcmds(ps, pjt->pll[pll_id]->seq);
 		ps->cur_pll = pll_id;
@@ -353,7 +353,7 @@ static int aic3xxx_cfw_control_u(struct cfw_state *ps, char *cname, int param)
 			warn("Parameter out of range\n");
 			return -EINVAL;
 		}
-		DBG("Sending control %s[%d]", cname, param);
+		DBG("Sending control %s[%d]\n", cname, param);
 		pc->icur = param;
 		aic3xxx_cfw_dlctl(ps, pc->output[param], pc->mute_flags);
 		return 0;
@@ -613,7 +613,7 @@ static int aic3xxx_cfw_dlcfg(struct cfw_state *ps, struct cfw_image *pim)
 {
 	int i, run_state, swap;
 
-	DBG("Download CFG %s", pim->name);
+	DBG("Download CFG %s\n", pim->name);
 	run_state = ps->ops->lock(ps->codec);
 	swap = 0;
 	for (i = 0; i < sizeof(csecs) / sizeof(csecs[0]); ++i) {
@@ -647,7 +647,7 @@ static int aic3xxx_cfw_dlimage(struct cfw_state *ps, struct cfw_image *pim)
 
 	if (!pim)
 		return 0;
-	DBG("Download IMAGE %s", pim->name);
+	DBG("Download IMAGE %s\n", pim->name);
 	for (i = 0; i < CFW_BLOCK_N; ++i)
 		aic3xxx_cfw_dlcmds(ps, pim->block[i]);
 	return 0;
@@ -748,13 +748,13 @@ static int crc_chk(void *p, int n)
 	u32 crc = pjt->cksum, crc_comp;
 
 	pjt->cksum = 0;
-	DBG("Entering crc %d", n);
+	DBG("Entering crc %d\n", n);
 	crc_comp = crc32(p, n);
 	if (crc_comp != crc) {
-		DBG("CRC mismatch 0x%08X != 0x%08X", crc, crc_comp);
+		DBG("CRC mismatch 0x%08X != 0x%08X\n", crc, crc_comp);
 		return 0;
 	}
-	DBG("CRC pass");
+	DBG("CRC pass\n");
 	pjt->cksum = crc;
 	return 1;
 }
@@ -834,7 +834,7 @@ static struct cfw_project *aic3xxx_cfw_unpickle(void *p, int n)
 		warn("asoc_toc not defined.  FW version mismatch?");
 		return NULL;
 	}
-	DBG("loaded modes");
+	DBG("loaded modes\n");
 	return pjt;
 }
 static int aic3xxx_cfw_set_mode_id(struct cfw_state *ps)
@@ -849,7 +849,7 @@ static int aic3xxx_cfw_set_mode_id(struct cfw_state *ps)
 			return 0;
 		}
 	}
-	DBG("Unknown mode,cfg combination [%d,%d]", ps->cur_mode,
+	DBG("Unknown mode,cfg combination [%d,%d]\n", ps->cur_mode,
 	    ps->cur_cfg);
 	return -1;
 }
@@ -864,7 +864,7 @@ static int aic3xxx_get_control(struct snd_kcontrol *kcontrol,
 	int i;
 
 	if (ps->cur_pfw >= ps->pjt->npfw) {
-		DBG("Not in MiniDSP mode");
+		DBG("Not in MiniDSP mode\n");
 		return 0;
 	}
 	pfw = ps->pjt->pfw[ps->cur_pfw];
@@ -896,7 +896,7 @@ static int aic3xxx_info_control(struct snd_kcontrol *kcontrol,
 	int i;
 
 	if (ps->cur_pfw >= ps->pjt->npfw) {
-		DBG("Not in MiniDSP mode");
+		DBG("Not in MiniDSP mode\n");
 		return 0;
 	}
 	pfw = ps->pjt->pfw[ps->cur_pfw];
@@ -949,7 +949,7 @@ int aic3xxx_cfw_add_controls(struct snd_soc_codec *codec, struct cfw_state *ps)
 			generic_control->info = aic3xxx_info_control;
 			generic_control->iface = SNDRV_CTL_ELEM_IFACE_MIXER;
 			snd_soc_add_controls(codec, generic_control, 1);
-			DBG("Added control %s", pc->name);
+			DBG("Added control %s\n", pc->name);
 		}
 	}
 	return 0;

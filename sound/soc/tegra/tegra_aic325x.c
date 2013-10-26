@@ -63,10 +63,11 @@
 #define GPIO_HP_MUTE    BIT(1)
 #define GPIO_INT_MIC_EN BIT(2)
 #define GPIO_EXT_MIC_EN BIT(3)
+#define GPIO_HP_DET     BIT(4)
 
 #define DAI_LINK_HIFI		0
-#define DAI_LINK_SPDIF		0//1
-#define DAI_LINK_BTSCO		1//2
+#define DAI_LINK_SPDIF		1
+#define DAI_LINK_BTSCO		2
 #define DAI_LINK_VOICE_CALL	3
 #define DAI_LINK_BT_VOICE_CALL	4
 #define NUM_DAI_LINKS	5
@@ -321,14 +322,14 @@ static int tegra_aic325x_hw_params(struct snd_pcm_substream *substream,
 		dev_err(card->dev, "cpu_dai fmt not set\n");
 		return err;
 	}
-
+/*
 	err = snd_soc_dai_set_sysclk(codec_dai, 0, mclk,
 					SND_SOC_CLOCK_IN);
 	if (err < 0) {
 		dev_err(card->dev, "codec_dai clock not set\n");
 		return err;
 	}
-
+*/
 #ifdef CONFIG_ARCH_TEGRA_2x_SOC
 	err = tegra20_das_connect_dac_to_dap(TEGRA20_DAS_DAP_SEL_DAC1,
 					TEGRA20_DAS_DAP_ID_1);
@@ -660,14 +661,14 @@ static int tegra_aic325x_voice_call_hw_params(
 		dev_err(card->dev, "codec_dai fmt not set\n");
 		return err;
 	}
-
+/*
 	err = snd_soc_dai_set_sysclk(codec_dai, 0, mclk,
 					SND_SOC_CLOCK_IN);
 	if (err < 0) {
 		dev_err(card->dev, "codec_dai clock not set\n");
 		return err;
 	}
-
+*/
 	if(!machine_is_tegra_enterprise()) {
 		if (params_rate(params) == 8000) {
 			/* Change these Settings for 8KHz*/
@@ -821,6 +822,13 @@ static struct snd_soc_ops tegra_aic325x_bt_ops = {
 
 static struct snd_soc_jack tegra_aic325x_hp_jack;
 
+static struct snd_soc_jack_gpio tegra_aic325x_hp_jack_gpio = {
+	.name = "headphone detect",
+	.report = SND_JACK_HEADPHONE,
+	.debounce_time = 150,
+	.invert = 1,
+};
+
 #ifdef CONFIG_SWITCH
 static struct switch_dev aic325x_wired_switch_dev = {
 	.name = "h2w",
@@ -837,7 +845,7 @@ static int aic325x_headset_switch_notify(struct notifier_block *self,
 	unsigned long action, void *dev)
 {
 	int state = 0;
-
+printk("%s: action 0x%x\n", __func__, action);
 	switch (action) {
 	case SND_JACK_HEADPHONE:
 		state |= BIT_HEADSET_NO_MIC;
@@ -902,39 +910,49 @@ static int tegra_aic325x_event_hp(struct snd_soc_dapm_widget *w,
 
 static const struct snd_soc_dapm_widget tegra_aic325x_dapm_widgets[] = {
 	SND_SOC_DAPM_SPK("Int Spk", tegra_aic325x_event_int_spk),
-	SND_SOC_DAPM_HP("Earpiece", NULL),
+//	SND_SOC_DAPM_HP("Earpiece", NULL),
 	SND_SOC_DAPM_HP("Headphone Jack", tegra_aic325x_event_hp),
-	SND_SOC_DAPM_MIC("Mic Jack", NULL),
+//	SND_SOC_DAPM_MIC("Mic Jack", NULL),
 	SND_SOC_DAPM_INPUT("Ext Mic"),
-	SND_SOC_DAPM_LINE("Linein", NULL),
+//	SND_SOC_DAPM_LINE("Linein", NULL),
 	SND_SOC_DAPM_MIC("Int Mic", NULL),
 };
 
 static const struct snd_soc_dapm_route aic325x_audio_map[] = {
-	{"Int Spk", NULL, "SPKL"},
-	{"Int Spk", NULL, "SPKR"},
-	{"Earpiece", NULL, "RECP"},
-	{"Earpiece", NULL, "RECM"},
+	{"Int Spk", NULL, "LOL"},//SPKL
+	{"Int Spk", NULL, "LOR"},//SPKR
+//	{"Earpiece", NULL, "RECP"},
+//	{"Earpiece", NULL, "RECM"},
 	{"Headphone Jack", NULL, "HPL"},
 	{"Headphone Jack", NULL, "HPR"},
 	/* internal (IN2L/IN2R) mic is stero */
-	{"Mic Bias Int" ,NULL, "Int Mic"},
-	{"IN2L", NULL, "Mic Bias Int"},
-	{"Mic Bias Int" ,NULL, "Int Mic"},
-	{"IN2R", NULL, "Mic Bias Int"},
-	{"Mic Bias Ext" ,NULL, "Mic Jack"},
-	{"CM1L" ,NULL, "Mic Jack"},
-	{"IN1L", NULL, "Mic Bias Ext"},
-	{"IN1L", NULL, "CM1L"},
+	{"Right DMIC" ,NULL, "Int Mic"},
+	{"Left DMIC" ,NULL, "Int Mic"},
+	{"IN1_R" ,NULL, "Int Mic"},
+	{"IN1_L" ,NULL, "Int Mic"},
+	{"IN3_R" ,NULL, "Int Mic"},
+	{"IN3_L" ,NULL, "Int Mic"},
+	{"IN3_R" ,NULL, "Ext Mic"},
+	{"IN3_L" ,NULL, "Ext Mic"},
+	{"IN1_R" ,NULL, "Ext Mic"},
+	{"IN1_L" ,NULL, "Ext Mic"},
+//	{"Mic Bias Int" ,NULL, "Int Mic"},
+//	{"IN2L", NULL, "Mic Bias Int"},
+//	{"Mic Bias Int" ,NULL, "Int Mic"},
+//	{"IN2R", NULL, "Mic Bias Int"},
+//	{"Mic Bias Ext" ,NULL, "Mic Jack"},
+//	{"CM1L" ,NULL, "Mic Jack"},
+//	{"IN1L", NULL, "Mic Bias Ext"},
+//	{"IN1L", NULL, "CM1L"},
 };
 
 static const struct snd_kcontrol_new tegra_aic325x_controls[] = {
 	SOC_DAPM_PIN_SWITCH("Int Spk"),
-	SOC_DAPM_PIN_SWITCH("Earpiece"),
+//	SOC_DAPM_PIN_SWITCH("Earpiece"),
 	SOC_DAPM_PIN_SWITCH("Headphone Jack"),
-	SOC_DAPM_PIN_SWITCH("Mic Jack"),
+//	SOC_DAPM_PIN_SWITCH("Mic Jack"),
 	SOC_DAPM_PIN_SWITCH("Ext Mic"),
-	SOC_DAPM_PIN_SWITCH("Linein"),
+//	SOC_DAPM_PIN_SWITCH("Linein"),
 	SOC_DAPM_PIN_SWITCH("Int Mic"),
 };
 
@@ -1038,23 +1056,32 @@ static int tegra_aic325x_init(struct snd_soc_pcm_runtime *rtd)
 	snd_soc_dapm_add_routes(dapm, aic325x_audio_map,
 					ARRAY_SIZE(aic325x_audio_map));
 
-	ret = snd_soc_jack_new(codec, "Headset Jack", SND_JACK_HEADSET,
-			&tegra_aic325x_hp_jack);
-	if (ret < 0)
-		return ret;
+					
+	if (gpio_is_valid(pdata->gpio_hp_det)) {
+		tegra_aic325x_hp_jack_gpio.gpio = pdata->gpio_hp_det;	
+		
+		ret = snd_soc_jack_new(codec, "Headset Jack", SND_JACK_HEADSET,
+				&tegra_aic325x_hp_jack);
+		if (ret < 0)
+			return ret;
 
 #ifdef CONFIG_SWITCH
-	snd_soc_jack_notifier_register(&tegra_aic325x_hp_jack,
-		&aic325x_headset_switch_nb);
+		snd_soc_jack_notifier_register(&tegra_aic325x_hp_jack,
+			&aic325x_headset_switch_nb);
 #else /*gpio based headset detection*/
-	snd_soc_jack_add_pins(&tegra_aic325x_hp_jack,
-		ARRAY_SIZE(tegra_aic325x_hp_jack_pins),
-		tegra_aic325x_hp_jack_pins);
+		snd_soc_jack_add_pins(&tegra_aic325x_hp_jack,
+			ARRAY_SIZE(tegra_aic325x_hp_jack_pins),
+			tegra_aic325x_hp_jack_pins);
 #endif
-
+		snd_soc_jack_add_gpios(&tegra_aic325x_hp_jack,
+					1,
+					&tegra_aic325x_hp_jack_gpio);
+		machine->gpio_requested |= GPIO_HP_DET;
+	}
+/*
 	aic3256_hs_jack_detect(codec, &tegra_aic325x_hp_jack,
 		SND_JACK_HEADSET);
-
+*/
 	/* Add call mode switch control */
 	ret = snd_ctl_add(codec->card->snd_card,
 			snd_ctl_new1(&tegra_aic325x_call_mode_control,
@@ -1062,8 +1089,8 @@ static int tegra_aic325x_init(struct snd_soc_pcm_runtime *rtd)
 	if (ret < 0)
 		return ret;
 
-	snd_soc_dapm_force_enable_pin(dapm, "MICBIAS_EXT ON");
-	snd_soc_dapm_force_enable_pin(dapm,"MICBIAS_INT ON");
+	snd_soc_dapm_force_enable_pin(dapm, "IN2L");//MICBIAS_EXT ON
+	snd_soc_dapm_force_enable_pin(dapm,"IN2R"); //MICBIAS_INT ON
 	snd_soc_dapm_sync(dapm);
 
 	return 0;
@@ -1072,8 +1099,8 @@ static int tegra_aic325x_init(struct snd_soc_pcm_runtime *rtd)
 static struct snd_soc_dai_link tegra_aic325x_dai[] = {
 	[DAI_LINK_HIFI] = {
 		.name = "AIC325x",
-		.stream_name = "AIC325x PCM HIFI",
-		.codec_name = "tlv320aic325x-codec.4-0018",
+		.stream_name = "TLV320AIC325x", //AIC325x PCM HIFI
+		.codec_name = "tlv320aic325x-codec.0", //tlv320aic325x-codec.4-0018
 		.platform_name = "tegra-pcm-audio",
 #ifdef CONFIG_ARCH_TEGRA_2x_SOC
 		.cpu_dai_name = "tegra20-i2s.0",
@@ -1084,7 +1111,7 @@ static struct snd_soc_dai_link tegra_aic325x_dai[] = {
 		.init = tegra_aic325x_init,
 		.ops = &tegra_aic325x_hifi_ops,
 		},
-/*	[DAI_LINK_SPDIF] = {
+	[DAI_LINK_SPDIF] = {
 		.name = "SPDIF",
 		.stream_name = "SPDIF PCM",
 		.codec_name = "spdif-dit.0",
@@ -1097,7 +1124,7 @@ static struct snd_soc_dai_link tegra_aic325x_dai[] = {
 		.codec_dai_name = "dit-hifi",
 		.ops = &tegra_aic325x_spdif_ops,
 		},
-	[DAI_LINK_BTSCO] = {
+/*	[DAI_LINK_BTSCO] = {
 		.name = "BT-SCO",
 		.stream_name = "BT SCO PCM",
 		.codec_name = "spdif-dit.1",
@@ -1131,10 +1158,37 @@ static struct snd_soc_dai_link tegra_aic325x_dai[] = {
 		},*/
 };
 
+static int tegra_aic325x_suspend_post(struct snd_soc_card *card)
+{
+	struct snd_soc_jack_gpio *gpio = &tegra_aic325x_hp_jack_gpio;
+
+	if (gpio_is_valid(gpio->gpio))
+		disable_irq(gpio_to_irq(gpio->gpio));
+
+	return 0;
+}
+
+static int tegra_aic325x_resume_pre(struct snd_soc_card *card)
+{
+	int val;
+	struct snd_soc_jack_gpio *gpio = &tegra_aic325x_hp_jack_gpio;
+
+	if (gpio_is_valid(gpio->gpio)) {
+		val = gpio_get_value(gpio->gpio);
+		val = gpio->invert ? !val : val;
+		snd_soc_jack_report(gpio->jack, val, gpio->report);
+		enable_irq(gpio_to_irq(gpio->gpio));
+	}
+
+	return 0;
+}
+
 static struct snd_soc_card snd_soc_tegra_aic325x = {
 	.name = "tegra-aic325x",
 	.dai_link = tegra_aic325x_dai,
 	.num_links = ARRAY_SIZE(tegra_aic325x_dai),
+	.suspend_post = tegra_aic325x_suspend_post,
+	.resume_pre = tegra_aic325x_resume_pre,	
 };
 
 static __devinit int tegra_aic325x_driver_probe(struct platform_device *pdev)
@@ -1239,6 +1293,10 @@ static int __devexit tegra_aic325x_driver_remove(struct platform_device *pdev)
 
 	tegra_asoc_utils_fini(&machine->util_data);
 
+	if (machine->gpio_requested & GPIO_HP_DET)
+		snd_soc_jack_free_gpios(&tegra_aic325x_hp_jack,
+					1,
+					&tegra_aic325x_hp_jack_gpio);	
 	if (machine->gpio_requested & GPIO_EXT_MIC_EN)
 		gpio_free(pdata->gpio_ext_mic_en);
 	if (machine->gpio_requested & GPIO_INT_MIC_EN)

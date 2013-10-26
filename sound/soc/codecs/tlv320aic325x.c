@@ -348,7 +348,7 @@ static const char * const charge_pump_ctrl_enum[] = { "Power_Down",
 							"Power_Up" };
 SOC_ENUM_SINGLE_DECL(charge_pump_ctrl, AIC3256_POW_CFG, 0,
 						charge_pump_ctrl_enum);
-
+/*
 static const char *asibclk_text[] = {
         "DAC_CLK",
         "DAC_MOD_CLK",
@@ -358,7 +358,7 @@ static const char *asibclk_text[] = {
 SOC_ENUM_SINGLE_DECL(asibclk_enum, AIC3256_INTERFACE_SET_REG_3, 0, asibclk_text);
 static const struct snd_kcontrol_new asibclk_control =
 SOC_DAPM_ENUM("ASI_BCLK Route", asibclk_enum);
-
+*/
 /* DAC volume DB scale */
 static const DECLARE_TLV_DB_SCALE(dac_vol_tlv, -6350, 50, 0);
 /* ADC volume DB scale */
@@ -724,7 +724,7 @@ static const struct snd_kcontrol_new adc3x01_right_input_mixer_controls[] = {
 	SOC_DAPM_SINGLE("IN2L P IN3L M switch", AIC3256_RMICPGA_NIN_CFG, 2, 3, 1),
 	SOC_DAPM_SINGLE("IN1L P SE switch", AIC3256_RMICPGA_NIN_CFG, 0, 3, 1),
 };
-
+/*
 static const char *asilin_text[] = {
 	"Off", "ASI Left In","ASI Right In","ASI MonoMix In"
 };
@@ -737,7 +737,7 @@ static const char *asirin_text[] = {
 };
 SOC_ENUM_SINGLE_DECL(asirin_enum, AIC3256_DAC_CHN_REG, 2, asirin_text);
 static const struct snd_kcontrol_new asirin_control =
-SOC_DAPM_ENUM("ASIIn Right Route", asirin_enum);      
+SOC_DAPM_ENUM("ASIIn Right Route", asirin_enum);    */  
 
 /**$
  * pll_power_on_event: provide delay after widget power up
@@ -773,7 +773,7 @@ static int aic325x_dac_event(struct snd_soc_dapm_widget *w,
 	int sync_needed = 0, non_sync_state = 0;
 	int other_dsp = 0, run_state = 0;
 	struct aic325x_priv *aic325x = snd_soc_codec_get_drvdata(w->codec);
-
+printk("%s: event %d\n", __func__, event);
 	if (w->shift == 7) {
 		reg_mask = AIC3256_LDAC_POWER_STATUS_MASK ;
 		run_state_mask = AIC3XXX_COPS_MDSP_D_L;
@@ -849,7 +849,7 @@ static int aic325x_adc_event(struct snd_soc_dapm_widget *w,
 	int reg_mask = 0;
 	int dig_mic_mask = 0;
 	int ret_wbits = 0;
-
+printk("%s: event %d\n", __func__, event);
 	if (w->shift == 7) {
 		reg_mask = AIC3256_LADC_POWER_MASK;
 		dig_mic_mask = AIC3256_LADC_DIGITAL_MASK; 
@@ -919,7 +919,7 @@ static int aic325x_adc_event(struct snd_soc_dapm_widget *w,
 /* AIC325x Widget Structure */
 static const struct snd_soc_dapm_widget aic325x_dapm_widgets[] = {
 #ifndef CONFIG_MFD_ADC3X01
-	SND_SOC_DAPM_AIF_IN("ASIIN", "ASI Playback", 0, SND_SOC_NOPM, 0, 0),
+/*	SND_SOC_DAPM_AIF_IN("ASIIN", "ASI Playback", 0, SND_SOC_NOPM, 0, 0),
 	SND_SOC_DAPM_PGA("ASILIN", SND_SOC_NOPM, 0, 0, NULL, 0),
 	SND_SOC_DAPM_PGA("ASIRIN", SND_SOC_NOPM, 0, 0, NULL, 0),
 	SND_SOC_DAPM_PGA("ASIMonoMixIN", SND_SOC_NOPM, 0, 0, NULL, 0),
@@ -928,7 +928,7 @@ static const struct snd_soc_dapm_widget aic325x_dapm_widgets[] = {
 	SND_SOC_DAPM_MUX("ASIIn Left Route",
 			SND_SOC_NOPM, 0, 0, &asilin_control),       
 	SND_SOC_DAPM_MUX("ASIIn Right Route",
-			SND_SOC_NOPM, 0, 0, &asirin_control),       
+			SND_SOC_NOPM, 0, 0, &asirin_control),   */    
 	/* dapm widget (stream domain) for left DAC */
 	SND_SOC_DAPM_DAC_E("Left DAC", NULL, AIC3256_DAC_CHN_REG,
 			7, 0, aic325x_dac_event, SND_SOC_DAPM_POST_PMU |
@@ -978,8 +978,8 @@ static const struct snd_soc_dapm_widget aic325x_dapm_widgets[] = {
 				NULL, 0),
 
 	/* dapm supply widget for Charge pump */
-	SND_SOC_DAPM_SUPPLY_S("Charge Pump", 4,AIC3256_POW_CFG, 1, 0, aic3256_cp_event,
-						SND_SOC_DAPM_POST_PMU ),
+/*	SND_SOC_DAPM_SUPPLY_S("Charge Pump", 4,AIC3256_POW_CFG, 1, 0, aic3256_cp_event,
+						SND_SOC_DAPM_POST_PMU ),*/
         SND_SOC_DAPM_PGA("CM1L", SND_SOC_NOPM, 0, 0, NULL, 0),                                                                                               
         SND_SOC_DAPM_PGA("CM2L", SND_SOC_NOPM, 0, 0, NULL, 0),                                                                                               
         SND_SOC_DAPM_PGA("CM1R", SND_SOC_NOPM, 0, 0, NULL, 0),                                                                                               
@@ -1072,9 +1072,9 @@ static const struct snd_soc_dapm_widget aic325x_dapm_widgets[] = {
 	/* Supply widget for MADC divider */
 	SND_SOC_DAPM_SUPPLY_S("MADC_DIV", 3,AIC3256_MADC_CLK_REG_9, 7, 0, NULL, 0),
 	/* Supply widget for Bit Clock divider */
-	//SND_SOC_DAPM_SUPPLY("BCLK_N_DIV", AIC3256_CLK_REG_11, 7, 0, NULL, 0),
-	SND_SOC_DAPM_MUX("ASI_BCLK Route",
-                        SND_SOC_NOPM, 0, 0, &asibclk_control),
+	SND_SOC_DAPM_SUPPLY("BCLK_N_DIV", AIC3256_CLK_REG_11, 7, 0, NULL, 0),
+//	SND_SOC_DAPM_MUX("ASI_BCLK Route",
+//                        SND_SOC_NOPM, 0, 0, &asibclk_control),
 };
 
 static const struct snd_soc_dapm_widget aic325x_input_mixer_widgets[] = {
@@ -1113,16 +1113,18 @@ static const  struct snd_soc_dapm_route aic325x_dapm_routes[] = {
 	{"NADC_DIV", NULL, "CODEC_CLK_IN"},
 	{"MDAC_DIV", NULL, "NDAC_DIV"},
 	{"MADC_DIV", NULL, "NADC_DIV"},
-//	{"BCLK_N_DIV", NULL, "MADC_DIV"},
-//	{"BCLK_N_DIV", NULL, "MDAC_DIV"},
+	{"BCLK_N_DIV", NULL, "MADC_DIV"},
+	{"BCLK_N_DIV", NULL, "MDAC_DIV"},
 
-	{"ASI_BCLK Route","DAC_CLK","NDAC_DIV"},
+/*	{"ASI_BCLK Route","DAC_CLK","NDAC_DIV"},
         {"ASI_BCLK Route","DAC_MOD_CLK","MDAC_DIV"},
         {"ASI_BCLK Route","ADC_CLK","NADC_DIV"},
-        {"ASI_BCLK Route","ADC_MOD_CLK","MADC_DIV"},
+        {"ASI_BCLK Route","ADC_MOD_CLK","MADC_DIV"},*/
 
-	{"Left ADC", NULL, "MDAC_DIV"},
-	{"Right ADC", NULL, "MDAC_DIV"},
+	{"Left ADC", NULL, "BCLK_N_DIV"},
+	{"Right ADC", NULL, "BCLK_N_DIV"},	
+//	{"Left ADC", NULL, "MDAC_DIV"},
+//	{"Right ADC", NULL, "MDAC_DIV"},
 	/* Clock routing for ADC */
 	{"Left ADC", NULL, "MADC_DIV"},
 	{"Right ADC", NULL, "MADC_DIV"},
@@ -1131,9 +1133,12 @@ static const  struct snd_soc_dapm_route aic325x_dapm_routes[] = {
 	/* Clock routing for DAC */
 	{"Left DAC", NULL, "MDAC_DIV" },
 	{"Right DAC", NULL, "MDAC_DIV"},
-
+	
+	{"Left DAC", NULL, "BCLK_N_DIV"},
+	{"Right DAC", NULL, "BCLK_N_DIV"},	
+	
 /* ASI routing */
-	{"ASILIN", NULL, "ASIIN"},
+/*	{"ASILIN", NULL, "ASIIN"},
 	{"ASIRIN", NULL, "ASIIN"},
 	{"ASIMonoMixIN", NULL, "ASIIN"},
 
@@ -1149,7 +1154,7 @@ static const  struct snd_soc_dapm_route aic325x_dapm_routes[] = {
 	{"ASI IN Port", NULL, "ASIIn Right Route"},
 
 	{"Left DAC", NULL, "ASI IN Port"},
-	{"Right DAC", NULL, "ASI IN Port"},
+	{"Right DAC", NULL, "ASI IN Port"},*/
 
 	/* Left Headphone Output */
 	{"HPL Output Mixer", "L_DAC switch", "Left DAC"},
@@ -1172,8 +1177,8 @@ static const  struct snd_soc_dapm_route aic325x_dapm_routes[] = {
 	{"HPR", NULL, "HPR PGA"},
 
 	/* Charge pump to HP PGA */
-	{"HPL PGA", NULL, "Charge Pump"},
-	{"HPR PGA", NULL, "Charge Pump"},
+//	{"HPL PGA", NULL, "Charge Pump"},
+//	{"HPR PGA", NULL, "Charge Pump"},
 
 	/* Left Line-out Output */
 	{"LOL Output Mixer", "L_DAC switch", "Left DAC"},
@@ -1190,6 +1195,9 @@ static const  struct snd_soc_dapm_route aic325x_dapm_routes[] = {
 
 	{"LOL", NULL, "LOL PGA"},
 	{"LOR", NULL, "LOR PGA"},
+	
+//	{"Int Spk", NULL, "LOL"},
+//	{"Int Spk", NULL, "LOR"},
 #endif
 
 
@@ -1199,8 +1207,8 @@ static const  struct snd_soc_dapm_route aic325x_dapm_routes[] = {
 	/* Right MicPGA */
 	{"Right MicPGA", NULL, "Right Input Mixer"},
 
-//	{"Left ADC", NULL, "Left MicPGA"},
-//	{"Right ADC", NULL, "Right MicPGA"},
+	{"Left ADC", NULL, "Left MicPGA"},
+	{"Right ADC", NULL, "Right MicPGA"},
 
 	{"Left ADC Route", "Analog", "Left MicPGA"},
 	{"Left ADC Route", "Digital", "Left DMIC"},
@@ -1286,7 +1294,7 @@ void aic3256_firmware_load(const struct firmware *fw, void *context)
 	struct snd_soc_codec *codec = context;
 	struct aic325x_priv *private_ds = snd_soc_codec_get_drvdata(codec);
 	int ret = 0;
-
+printk("=== %s\n", __func__); //*	
 	aic3xxx_cfw_lock(private_ds->cfw_p, 1); /* take the lock */
 	if (private_ds->cur_fw != NULL)
 		release_firmware(private_ds->cur_fw);
@@ -1325,7 +1333,7 @@ void aic3256_firmware_load(const struct firmware *fw, void *context)
 static int aic325x_hp_event(struct snd_soc_dapm_widget *w,
 		struct snd_kcontrol *kcontrol, int event)
 {
-
+printk("%s: event %d\n", __func__, event);
 	struct snd_soc_codec *codec = w->codec;
 	//struct aic325x_priv *aic325x = snd_soc_codec_get_drvdata(codec);
 	int ret_wbits=0;
@@ -1367,7 +1375,7 @@ static int aic3256_cp_event(struct snd_soc_dapm_widget *w,
 		struct snd_kcontrol *kcontrol, int event)
 {
 	struct snd_soc_codec *codec = w->codec;
-
+printk("%s: event %d\n", __func__, event);
 	if (event & SND_SOC_DAPM_POST_PMU) {
 		msleep(20);
 		snd_soc_write(codec, AIC3256_HP_DRIVER_CONF_REG, 0x13);	
@@ -2030,7 +2038,7 @@ static int aic325x_set_bias_level(struct snd_soc_codec *codec,
 					enum snd_soc_bias_level level)
 {
 	struct aic325x_priv *aic325x = snd_soc_codec_get_drvdata(codec);
-
+printk("%s: level %d\n", __func__, level);
 	switch (level) {
 
 	/* full On */
@@ -2201,11 +2209,11 @@ static int aic325x_probe(struct snd_soc_codec *codec)
 	struct snd_soc_dapm_context *dapm = &codec->dapm;
 	struct aic325x_priv *aic325x;
 	struct aic3xxx *control;
-	
+
 	if (codec == NULL)
 		dev_err(codec->dev, "codec pointer is NULL\n");
-//	codec->control_data = dev_get_drvdata(codec->dev->parent);
-	codec->control_data = snd_soc_codec_get_drvdata(codec);
+	codec->control_data = dev_get_drvdata(codec->dev->parent);
+	
 	control = codec->control_data;
 
 	aic325x = kzalloc(sizeof(struct aic325x_priv), GFP_KERNEL);
@@ -2224,7 +2232,7 @@ static int aic325x_probe(struct snd_soc_codec *codec)
 				ARRAY_SIZE(aic325x_dapm_widgets));
 
 	switch (control->type) {
-	case TLV320AIC3256:
+	case TLV320AIC3256:	
 		snd_soc_dapm_new_controls(dapm, aic325x_input_mixer_widgets,
 				ARRAY_SIZE(aic325x_input_mixer_widgets));
 		ret = snd_soc_dapm_add_routes(dapm, aic325x_input_dapm_routes,
@@ -2252,19 +2260,20 @@ static int aic325x_probe(struct snd_soc_codec *codec)
 			ARRAY_SIZE(aic325x_dapm_routes));
 			
 	aic325x_set_bias_level(codec, SND_SOC_BIAS_STANDBY);
-	/* firmware load */
-	if (!strcmp(codec->name, "tlv320aic325x-codec.0"))
+	/* firmware load */ /**/
+	if (!strcmp(codec->name, "tlv320aic325x-codec.0")){ //tlv320aic325x-codec.4-0018
+printk("=== %s request_firmware\n", __func__); //*	
 		request_firmware_nowait(THIS_MODULE, FW_ACTION_HOTPLUG,
-				"tlv320aic3256_fw_v1.bin",
+				"tlv320aic3206_fw_v1.bin", //tlv320aic3256_fw_v1.bin
 				codec->dev, GFP_KERNEL, codec,
 				aic3256_firmware_load);
-	else // slave device
+	} else // slave device
 		request_firmware_nowait(THIS_MODULE, FW_ACTION_HOTPLUG,
 				"tlv320adc3x01_slave_v1.bin",
 				codec->dev, GFP_KERNEL, codec,
 				aic3256_firmware_load);	
 	mutex_init(&aic325x->io_lock);
-	
+	/**/
 	return ret;
 
 }
@@ -2356,138 +2365,6 @@ static struct platform_driver aic325x_codec_driver = {
 	.id_table = aic325x_id_table,
 };
 
-#if defined(CONFIG_I2C) || defined(CONFIG_I2C_MODULE)
-/*
- *----------------------------------------------------------------------------
- * Function : aic325x_codec_probe
- * Purpose  : This function attaches the i2c client and initializes
- *				AIC325x CODEC.
- *            NOTE:
- *            This function is called from i2c core when the I2C address is
- *            valid.
- *            If the i2c layer weren't so broken, we could pass this kind of
- *            data around
- *
- *----------------------------------------------------------------------------
- */
-static __devinit int aic325x_codec_probe(struct i2c_client *i2c,
-			const struct i2c_device_id *id)
-{
-	int ret;
-	struct aic3xxx *aic3xxx;
-	
-//	DBG(KERN_INFO "#%s: Entered\n", __func__);
-	printk("#%s: Entered\n", __func__);
-	
-	aic3xxx = kzalloc( sizeof(*aic3xxx), GFP_KERNEL); 	
-	if (aic3xxx == NULL)
-                return -ENOMEM;  
-        i2c_set_clientdata(i2c, aic3xxx);
-	aic3xxx->type = id->driver_data;
-	aic3xxx->dev = &i2c->dev;
-	aic3xxx->irq = i2c->irq;
-
-/*	int ret;
-	struct aic3xxx *aic3xxx = dev_get_drvdata(i2c->dev.parent);
-
-printk("aic325x_codec_probe aic3xxx->type: %d\n", aic3xxx->type);	*/	
-
-	
-/*
-	struct aic325x_priv *aic325x;
-
-	DBG(KERN_INFO "#%s: Entered\n", __func__);
-
-	aic325x = kzalloc(sizeof(struct aic325x_priv), GFP_KERNEL);
-
-	if (!aic325x) {
-		printk(KERN_ERR "#%s: Unable to Allocate Priv struct..\n",
-			__func__);
-		return -ENOMEM;
-	}
-
-	i2c_set_clientdata(i2c, aic325x);
-#if defined(LOCAL_REG_ACCESS)
-	aic325x->control_data = i2c;//
-#endif
-//	aic325x->control_type = SND_SOC_I2C;
-	aic325x->irq = i2c->irq;//
-	aic325x->pdata = i2c->dev.platform_data;//
-*/
-	/* The Configuration Support will be by default to 3 which
-	* holds the MAIN Patch Configuration.
-	*/
-/*	aic325x->current_dac_config[0] = -1;
-	aic325x->current_dac_config[1] = -1;
-	aic325x->current_adc_config[0] = -1;
-	aic325x->current_adc_config[1] = -1;
-
-	aic325x->mute_codec = 1;
-
-	aic325x->page_no = 0;
-	aic325x->book_no = 0;
-	aic325x->active_count = 0;
-	aic325x->dac_clkin_option = 3;
-	aic325x->adc_clkin_option = 3;
-*/
-	ret = snd_soc_register_codec(&i2c->dev,
-		&soc_codec_driver_aic325x,
-		tlv320aic325x_dai_driver, ARRAY_SIZE(tlv320aic325x_dai_driver));
-
-	if (ret < 0)
-	{
-		kfree(aic3xxx);
-		return ret;
-	}
-
-//snd_soc_codec_set_drvdata(codec, aic325x);	
-	
-//	DBG(KERN_INFO "#%s: Done ret %d\n", __func__, ret);
-	printk("#%s: Done ret %d\n", __func__, ret);
-	
-	return aic3xxx_device_init(aic3xxx);
-//	return ret;
-}
-
-/*
- *----------------------------------------------------------------------------
- * Function : aic325x_i2c_remove
- * Purpose  : This function removes the i2c client and uninitializes
- *                              AIC325X CODEC.
- *            NOTE:
- *            This function is called from i2c core
- *            If the i2c layer weren't so broken, we could pass this kind of
- *            data around
- *
- *----------------------------------------------------------------------------
- */
-static __devexit int aic325x_i2c_remove(struct i2c_client *i2c)
-{
-	snd_soc_unregister_codec(&i2c->dev);
-//	kfree(i2c_get_clientdata(i2c));
-//	return 0;
-	struct aic3xxx *aic3xxx = dev_get_drvdata(&i2c->dev);
-	aic3xxx_device_exit(aic3xxx);
-	return 0;
-}
-
-static const struct i2c_device_id tlv320aic325x_id[] = {
-	{"tlv320aic325x-codec", 0},
-	{}
-};
-MODULE_DEVICE_TABLE(i2c, tlv320aic325x_id);
-
-static struct i2c_driver tlv320aic325x_i2c_driver = {
-	.driver = {
-		.name = "tlv320aic325x-codec",
-		.owner = THIS_MODULE,
-	},
-	.probe = aic325x_codec_probe,
-	.remove = __devexit_p(aic325x_i2c_remove),
-	.id_table = tlv320aic325x_id,
-};
-#endif /*#if defined(CONFIG_I2C) || defined(CONFIG_I2C_MODULE)*/
-
 /*
  *----------------------------------------------------------------------------
  * Function : tlv320aic3256_modinit
@@ -2497,16 +2374,7 @@ static struct i2c_driver tlv320aic325x_i2c_driver = {
  */
 static int __init tlv320aic325x_modinit(void)
 {
-	int ret = 0;
-	printk(KERN_INFO "In %s\n",__func__);
-#if defined(CONFIG_I2C) || defined(CONFIG_I2C_MODULE)
-	ret = i2c_add_driver(&tlv320aic325x_i2c_driver);
-	if (ret != 0)
-		printk(KERN_ERR "Failed to register aic325x i2c driver %d\n",
-			ret);
-#endif
-	return ret;
-//	return platform_driver_register(&aic325x_codec_driver);
+	return platform_driver_register(&aic325x_codec_driver);
 }
 module_init(tlv320aic325x_modinit);
 
@@ -2519,10 +2387,7 @@ module_init(tlv320aic325x_modinit);
  */
 static void __exit tlv320aic325x_exit(void)
 {
-#if defined(CONFIG_I2C) || defined(CONFIG_I2C_MODULE)
-	i2c_del_driver(&tlv320aic325x_i2c_driver);
-#endif
-//	platform_driver_unregister(&aic325x_codec_driver);
+	platform_driver_unregister(&aic325x_codec_driver);
 }
 
 module_exit(tlv320aic325x_exit);
@@ -2533,4 +2398,3 @@ MODULE_DESCRIPTION("ASoC TLV320AIC325x codec driver");
 MODULE_AUTHOR("Aravindan Muthukumar");
 MODULE_AUTHOR("Suresh Pm");
 MODULE_LICENSE("GPL");
-

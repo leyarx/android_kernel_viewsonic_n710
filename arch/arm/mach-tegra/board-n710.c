@@ -391,7 +391,7 @@ static struct i2c_board_info n710_i2c4_bq24160_board_info[] = {
 };
 
 static struct i2c_board_info __initdata n710_codec_aic325x_info = {
-	I2C_BOARD_INFO("tlv320aic325x-codec", 0x18),
+	I2C_BOARD_INFO("tlv320aic325x", 0x18),
 	.irq = TEGRA_GPIO_TO_IRQ(TEGRA_GPIO_HP_DET),
 };
 
