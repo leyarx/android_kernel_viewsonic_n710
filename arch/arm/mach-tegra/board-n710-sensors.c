@@ -402,13 +402,13 @@ static struct nct1008_platform_data n710_nct1008_pdata = {
 	.probe_callback = nct1008_probe_callback,
 #endif
 };
-
+/*
 static struct i2c_board_info cardhu_i2c4_bq27541_board_info[] = {
 	{
 		I2C_BOARD_INFO("bq27541-battery", 0x55),
 	}
 };
-
+*/
 static struct i2c_board_info n710_i2c4_nct1008_board_info[] = {
 	{
 		I2C_BOARD_INFO("nct1008", 0x4C),

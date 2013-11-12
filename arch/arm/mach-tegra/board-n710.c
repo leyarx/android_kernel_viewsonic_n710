@@ -39,9 +39,8 @@
 #include <linux/skbuff.h>
 #include <linux/ti_wilink_st.h>
 #include <linux/regulator/consumer.h>
-//#include <linux/smb347-charger.h> //!
-#include <linux/i2c/bq24160_charger.h>
-#include <linux/max17048_battery.h>
+#include <linux/bq24160_charger.h>
+//#include <linux/max17048_battery.h>
 #include <linux/leds.h>
 //#include <linux/i2c/at24.h>
 
@@ -358,7 +357,8 @@ static struct i2c_board_info cardhu_i2c4_bq27541_board_info[] = {
 */
 static struct i2c_board_info n710_i2c1_bq27x00_board_info[] = {
 	{
-		I2C_BOARD_INFO("bq27510", 0x55), //bq27x00-battery bq27500
+		I2C_BOARD_INFO("bq27541-battery", 0x55) //
+		//I2C_BOARD_INFO("bq27510", 0x55), //bq27x00-battery bq27500
 	}
 };
 /*
@@ -368,31 +368,32 @@ static struct i2c_board_info cardhu_i2c1_bq27541_board_info[] = {
 	}
 };
 */
-/*
-static struct i2c_board_info n710_i2c4_smb347_board_info[] = {
-	{
-		I2C_BOARD_INFO("smb347", 0x6a),
-	},
+
+static struct bq24160_charger_platform_data n710_bq24160_pdata = {
+	.vbus_gpio					= BQ24160_OTG_VBUS_GPIO,
+	.bq24160_reg3 				= 0x8e, /* Battery Regulation Voltage: (3500mV) + 700 mV / Input Limit for IN input 2.5A */
+	.bq24160_reg5 				= 0xee, /* Charge current: (550mA) + 2175mA / Termination current sense voltage: (50mA) + 300mA */
+	.bq24160_reg5_susp 			= 0x6a, /* Charge current: (550mA) + 975mA / Termination current sense voltage: (50mA) + 100mA */
 };
-*/
-/*
-static struct bq24160_platform_data n710_bq24160_pdata = {
-	.name = BQ24160_NAME,
-	.support_boot_charging = 1,
-	//.gpio_configure = bq24160_gpio_configure,
-};
-*/
+
+static void n710_bq24160_init(void)
+{
+	tegra_gpio_enable(BQ24160_IRQ_GPIO);
+	gpio_request(BQ24160_IRQ_GPIO, "bq24160-charger");
+	gpio_direction_input(BQ24160_IRQ_GPIO);	
+}
+
 static struct i2c_board_info n710_i2c4_bq24160_board_info[] = {
 	{
 		I2C_BOARD_INFO("bq24160", 0x6b),
-		/* .platform_data = &n710_bq24160_pdata, */
+		.platform_data = &n710_bq24160_pdata,
 		.irq = TEGRA_GPIO_TO_IRQ(BQ24160_IRQ_GPIO),
 	},
 };
 
 static struct i2c_board_info __initdata n710_codec_aic325x_info = {
 	I2C_BOARD_INFO("tlv320aic325x", 0x18),
-	.irq = TEGRA_GPIO_TO_IRQ(TEGRA_GPIO_HP_DET),
+//	.irq = TEGRA_GPIO_TO_IRQ(TEGRA_GPIO_HP_DET),
 };
 
 /*
@@ -423,10 +424,9 @@ static void n710_i2c_init(void)
 	platform_device_register(&tegra_i2c_device3);
 	platform_device_register(&tegra_i2c_device2);
 	platform_device_register(&tegra_i2c_device1);
-/*	
-	i2c_register_board_info(4, n710_i2c4_smb347_board_info,
-		ARRAY_SIZE(n710_i2c4_smb347_board_info));
-*/	
+
+	n710_bq24160_init();
+	
 	i2c_register_board_info(4, n710_i2c4_bq24160_board_info,
 		ARRAY_SIZE(n710_i2c4_bq24160_board_info));
 		

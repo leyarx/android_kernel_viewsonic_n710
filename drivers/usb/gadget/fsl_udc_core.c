@@ -312,7 +312,7 @@ static void cable_detection_work_handler(struct work_struct *w)
 			s_cable_info.cable_status = 0x01; //0001
 		} else {
 			printk(KERN_INFO "AC adapter connect\n");
-			s_cable_info.cable_status = 0x03; //0011
+			s_cable_info.cable_status = 0x11; //0011
 		}
 
 		if (pcb_id_version <= 0x2) {

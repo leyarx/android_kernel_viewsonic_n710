@@ -60,6 +60,7 @@
 
 /* Power GPIO's */
 #define BQ24160_IRQ_GPIO			TEGRA_GPIO_PK2
+#define BQ24160_OTG_VBUS_GPIO		TEGRA_GPIO_PH1
 
 /*****************Interrupt tables ******************/
 /* External peripheral act as interrupt controller */
