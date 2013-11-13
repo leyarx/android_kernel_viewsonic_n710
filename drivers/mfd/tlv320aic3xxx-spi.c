@@ -9,37 +9,6 @@
 
 #include <linux/mfd/tlv320aic3xxx-core.h>
 
-int aic3xxx_spi_read_device(struct aic3xxx *aic3xxx, u8 offset, void *dest,int count)
-{
-        struct spi_device *spi = to_spi_device(aic3xxx->dev);
-        int ret;
-
-	ret = spi_write_then_read(spi, offset, 1, dest, count);
-        if (ret < 0)
-                return ret;
-        
-        return ret;
-}
-EXPORT_SYMBOL_GPL(aic3xxx_spi_read_device);
-
-
-int aic3xxx_spi_write_device(struct aic3xxx *aic3xxx ,u8 offset,
-                                                const void *src,int count)
-{
-        struct spi_device *spi = to_spi_device(aic3xxx->dev);
-        u8 write_buf[count+1];
-	int ret;
-
-	write_buf[0] = offset;
-	memcpy(&write_buf[1], src, count);
-	ret = spi_write(spi, write_buf, count + 1);
-
-        if (ret < 0)
-                return ret;
-
-        return 0;
-}
-EXPORT_SYMBOL_GPL(aic3xxx_spi_write_device);
 
 static int __devinit tlv320aic3xxx_spi_probe(struct spi_device *spi)
 {
@@ -114,4 +83,3 @@ module_spi_driver(tlv320aic3xxx_spi_driver);
 MODULE_DESCRIPTION("TLV320AIC3XXX SPI bus interface");
 MODULE_AUTHOR("Mukund Navada <navada@ti.com>");
 MODULE_LICENSE("GPL");
-

@@ -844,8 +844,11 @@ enum headset_state {
 static int aic325x_headset_switch_notify(struct notifier_block *self,
 	unsigned long action, void *dev)
 {
+	struct snd_soc_jack *jack = dev;
+	struct snd_soc_codec *codec = jack->codec;
+
 	int state = 0;
-printk("%s: action 0x%x\n", __func__, action);
+
 	switch (action) {
 	case SND_JACK_HEADPHONE:
 		state |= BIT_HEADSET_NO_MIC;
@@ -859,6 +862,8 @@ printk("%s: action 0x%x\n", __func__, action);
 
 	switch_set_state(&aic325x_wired_switch_dev, state);
 
+	aic3256_hs_jack_set_state(codec, action);
+	
 	return NOTIFY_OK;
 }
 
@@ -1100,7 +1105,7 @@ static struct snd_soc_dai_link tegra_aic325x_dai[] = {
 	[DAI_LINK_HIFI] = {
 		.name = "AIC325x",
 		.stream_name = "TLV320AIC325x", //AIC325x PCM HIFI
-		.codec_name = "tlv320aic325x-codec.0", //tlv320aic325x-codec.4-0018
+		.codec_name = "AIC325x", //tlv320aic325x-codec.4-0018 //tlv320aic325x-codec.0
 		.platform_name = "tegra-pcm-audio",
 #ifdef CONFIG_ARCH_TEGRA_2x_SOC
 		.cpu_dai_name = "tegra20-i2s.0",

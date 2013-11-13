@@ -54,7 +54,6 @@ int aic3xxx_i2c_read_device(struct aic3xxx *aic3xxx, u8 offset, void *dest,int c
 {
         struct i2c_client *i2c = to_i2c_client(aic3xxx->dev);
         int ret;
-
         ret = i2c_master_send(i2c, &offset, 1);
         if (ret < 0)
                 return ret;
@@ -101,7 +100,7 @@ EXPORT_SYMBOL_GPL(aic3xxx_i2c_write_device);
 static __devinit int aic3xxx_i2c_probe(struct i2c_client *i2c,
 					  const struct i2c_device_id *id)
 {
-        struct aic3xxx *aic3xxx;
+	struct aic3xxx *aic3xxx;
 	
 	aic3xxx = kzalloc( sizeof(*aic3xxx), GFP_KERNEL); 	
 	if (aic3xxx == NULL)
@@ -126,7 +125,6 @@ static const struct i2c_device_id aic3xxx_i2c_id[] = {
 	{"tlv320aic3262", TLV320AIC3262},
 	{"tlv320aic3285", TLV320AIC3285},
 	{"tlv320aic325x", TLV320AIC3256},
-	{"tlv320adc3x01", TLV320ADC3001},
 	{ }
 };
 MODULE_DEVICE_TABLE(i2c, aic3xxx_i2c_id);
@@ -161,4 +159,3 @@ module_exit(aic3xxx_i2c_exit);
 MODULE_DESCRIPTION("TLV320AIC3XXX I2C bus interface");
 MODULE_AUTHOR("Mukund Navada <navada@ti.com>");
 MODULE_LICENSE("GPL");
-

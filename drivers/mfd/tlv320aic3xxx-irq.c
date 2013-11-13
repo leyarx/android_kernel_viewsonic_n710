@@ -217,4 +217,3 @@ EXPORT_SYMBOL(aic3xxx_irq_exit);
 
 MODULE_DESCRIPTION("Interrupt controller support for TI TLV320AIC3XXXX");
 MODULE_LICENSE("GPL");
-

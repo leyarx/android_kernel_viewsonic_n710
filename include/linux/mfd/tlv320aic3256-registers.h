@@ -70,8 +70,6 @@
 #define AIC3256_GPIO_CTRL			AIC3XXX_MAKE_REG(0,0,52)
 /*DOUT Function Control*/
 #define AIC3256_DOUT_CTRL			AIC3XXX_MAKE_REG(0,0,53)
-#define AIC3256_DOUT_ENABLE_M			0x2
-#define AIC3256_DOUT_ENABLE_V			0x2
 /*DIN Function Control*/
 #define AIC3256_DIN_CTL				AIC3XXX_MAKE_REG(0,0,54)
 /*DAC Signal Processing Block*/
@@ -153,8 +151,10 @@
 #define AIC3256_LDO_CTRL			AIC3XXX_MAKE_REG(0,1,2)
 
 #if defined(AIC3256_CODEC_SUPPORT) || defined(AIC3206_CODEC_SUPPORT)
+/*power control register 1*/
+#define AIC3256_PWR_CTRL_REG1                    AIC3XXX_MAKE_REG(0,1,3)
 /*power control register 2 */
-#define AIC3256_PWR_CTRL_REG                    AIC3XXX_MAKE_REG(0,1,2)
+#define AIC3256_PWR_CTRL_REG2                    AIC3XXX_MAKE_REG(0,1,4)
 #endif
 
 
@@ -249,8 +249,6 @@
 
 #define AIC3256_LADC_POWER_MASK		0x40
 #define AIC3256_RADC_POWER_MASK		0x04
-#define AIC3256_LADC_DIGITAL_MASK	0x08
-#define AIC3256_RADC_DIGITAL_MASK	0x04
 
 #define AIC3256_LDAC_POWER_MASK		0x80
 #define AIC3256_RDAC_POWER_MASK		0x08
@@ -389,6 +387,5 @@
 
 /* AIC3256 register space */
 #define	AIC3256_CACHEREGNUM		256
-
 
 

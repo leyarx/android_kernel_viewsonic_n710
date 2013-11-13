@@ -88,6 +88,7 @@ int aic3xxx_reg_read(struct aic3xxx *aic3xxx, unsigned int reg)
 	page = aic_reg->aic3xxx_register.page;
 	book = aic_reg->aic3xxx_register.book;  
 	offset = aic_reg->aic3xxx_register.offset;
+
 	mutex_lock(&aic3xxx->io_lock);
 	if (aic3xxx->book_no != book) {
 		ret = set_aic3xxx_book(aic3xxx, book);
@@ -195,6 +196,12 @@ int aic3xxx_reg_write(struct aic3xxx *aic3xxx, unsigned int reg,
 
 }
 EXPORT_SYMBOL_GPL(aic3xxx_reg_write);
+
+void *aic3xxx_get_i2c_dev(struct aic3xxx *aic3xxx)
+{
+	return aic3xxx->dev;
+}
+EXPORT_SYMBOL_GPL(aic3xxx_get_i2c_dev);
 
 /**
  * aic3xxx_bulk_write: Write multiple TLV320AIC3262 registers
@@ -320,11 +327,11 @@ EXPORT_SYMBOL_GPL(aic3xxx_wait_bits);
 
 static struct mfd_cell aic3256_devs[] = {
 	{
-		.name = "tlv320aic325x-codec",           
+		.name = "AIC325x",           
 	},
 
 	{
-		.name = "tlv320aic3256-gpio",
+		.name = "AIC3256",
 	},
 };
 
@@ -335,10 +342,8 @@ int aic3xxx_device_init(struct aic3xxx *aic3xxx)
 {
 	const char *devname;
 	int ret, i;
-	u8 resetVal = 1;
-
+	
 	dev_info(aic3xxx->dev, "aic3xxx_device_init beginning\n");
-
 	mutex_init(&aic3xxx->io_lock);
 	dev_set_drvdata(aic3xxx->dev, aic3xxx);
 	
@@ -361,32 +366,9 @@ int aic3xxx_device_init(struct aic3xxx *aic3xxx)
 		mdelay(5);
 	}
 
-	/* run the codec through software reset */
-	ret = aic3xxx_reg_write(aic3xxx,AIC3XXX_RESET,resetVal);
-	if (ret < 0) {
-		dev_err(aic3xxx->dev, "Could not write to AIC3XXX register\n");
-		goto err_return;
-	}
-
-	mdelay(10);
-	ret = aic3xxx_reg_read(aic3xxx,AIC3XXX_DEVICE_ID);
-#if 0
-	if (ret < 0) {
-		dev_err(aic3xxx->dev, "Failed to read ID register\n");
-		goto err_return;
-	}
-#endif
-
-#ifdef CONFIG_MFD_AIC3256
 	devname = "TLV320AIC3256";
-	aic3xxx->type = TLV320AIC3256;
+		aic3xxx->type = TLV320AIC3256;
 	dev_info(aic3xxx->dev, "%s revision %d\n", devname, ret);
-#endif
-#ifdef CONFIG_MFD_ADC3X01
-	devname = "TLV320ADC3001";
-	aic3xxx->type = TLV320ADC3001;
-	dev_info(aic3xxx->dev, "%s revision %d\n", devname, ret);
-#endif
 
 	/*If naudint is gpio convert it to irq number */
 	if (aic3xxx->pdata.gpio_irq == 1) {
@@ -409,7 +391,7 @@ int aic3xxx_device_init(struct aic3xxx *aic3xxx)
 		if (ret < 0)
 		goto err_irq;
 	}	
-	ret = mfd_add_devices(aic3xxx->dev, aic3xxx->pdata.id,
+	ret = mfd_add_devices(aic3xxx->dev, -1,
 			      aic3256_devs, ARRAY_SIZE(aic3256_devs),
 			      NULL, 0);
 	if (ret != 0) {
@@ -436,17 +418,14 @@ EXPORT_SYMBOL_GPL(aic3xxx_device_init);
 
 void aic3xxx_device_exit(struct aic3xxx *aic3xxx)
 {
-
 	mfd_remove_devices(aic3xxx->dev);
-
 	aic3xxx_irq_exit(aic3xxx);
-
 
 	if (aic3xxx->pdata.gpio_irq)
 		gpio_free(aic3xxx->pdata.naudint_irq);
 	if (aic3xxx->pdata.gpio_reset)
 		gpio_free(aic3xxx->pdata.gpio_reset);
-
+	return;
 }
 EXPORT_SYMBOL_GPL(aic3xxx_device_exit);
 
@@ -454,4 +433,3 @@ MODULE_AUTHOR("Mukund Navada <navada@ti.comm>");
 MODULE_AUTHOR("Mehar Bajwa <mehar.bajwa@ti.com>");
 MODULE_DESCRIPTION("Core support for the TLV320AIC3XXX audio CODEC");
 MODULE_LICENSE("GPL");
-

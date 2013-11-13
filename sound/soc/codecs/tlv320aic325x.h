@@ -22,8 +22,8 @@
 #ifndef _TLV320AIC325x_H
 #define _TLV320AIC325x_H
 
-#include "./aic3xxx/aic3xxx_cfw.h"
-#include "./aic3xxx/aic3xxx_cfw_ops.h"
+#include "./aic3xxx_cfw.h"
+#include "./aic3xxx_cfw_ops.h"
 #define AUDIO_NAME "aic325x"
 #define AIC325x_VERSION "1.1"
 
@@ -37,7 +37,7 @@
 /*#undef CONFIG_MINI_DSP*/
 
 /* Enable headset detection */
-/*#define HEADSET_DETECTION*/
+//#define HEADSET_DETECTION
 #undef HEADSET_DETECTION
 
 /* Macro enables or disables  AIC3xxx TiLoad Support */
@@ -47,7 +47,7 @@
 #define EN_REG_CACHE
 
 /* Flag to Select OMAP PANDA Board */
-#define CONFIG_SND_SOC_OMAP_AIC3256
+//#define CONFIG_SND_SOC_OMAP_AIC3256
 
 /* AIC325x supported sample rate are 8k to 192k */
 #define AIC325x_RATES	SNDRV_PCM_RATE_8000_192000
@@ -251,6 +251,8 @@ struct aic325x_priv {
 	u8 page_no;
 	struct aic3256_jack_data hs_jack;
 
+	void *dsp_priv;
+
 	struct snd_soc_codec *codec;
 	struct i2c_client *control_data;
 	int irq;
@@ -333,32 +335,31 @@ struct aic325x_rate_divs {
 	struct aic325x_configs codec_specific_regs[NO_FEATURE_REGS];
 };
 
-
 void aic3256_hs_jack_detect(struct snd_soc_codec *codec,
 				struct snd_soc_jack *jack, int report);
-
-
-
 /*
- *----------------------------------------------------------------------------
- * @struct  snd_soc_codec_dai |
- *          It is SoC Codec DAI structure which has DAI capabilities viz.,
- *          playback and capture, DAI runtime information viz. state of DAI
- *			and pop wait state, and DAI private data.
- *----------------------------------------------------------------------------
- */
-extern struct snd_soc_dai tlv320aic325x_dai;
+enum headset_accessory_state {
+	BIT_NO_ACCESSORY = 0,
+	BIT_HEADSET = (1 << 0),
+	BIT_HEADPHONE = (1 << 1),
+};
+*/
 
-/*
- *----------------------------------------------------------------------------
- * @struct  snd_soc_codec_device |
- *          This structure is soc audio codec device sturecute which pointer
- *          to basic functions aic325x_probe(), aic325x_remove(),
- *			aic325x_suspend() and aic325x_resume()
- *
- */
-extern struct snd_soc_codec_device soc_codec_dev_aic325x;
+void aic325x_set_gpio1(struct snd_soc_codec *codec, int val);
+void aic3256_hs_jack_set_state(struct snd_soc_codec *codec, int state);
 
-				/* _TLV320AIC325x_H */
-#endif
+//huskar
+#define AIC_PDET_PIN 178 //RK30_PIN2_PD7
+#define AIC_PDET_MUX_NAME 0
+#define AIC_PDET_MUX_GPIO 0
+#define AIC_PDET_IN 0
 
+#define AIC_SPK_PIN 9 //0
+#define AIC_SPK_MUX_NAME 0
+#define AIC_SPK_MUX_GPIO 0
+#define AIC_SPK_PWDN 0
+
+#define GPIO_HIGH 	1
+#define GPIO_LOW 	0
+
+#endif /* _TLV320AIC325x_H */

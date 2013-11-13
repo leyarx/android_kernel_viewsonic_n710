@@ -32,7 +32,6 @@ enum aic3xxx_type {
 	TLV320AIC3266 = 1,
 	TLV320AIC3285 = 2,
 	TLV320AIC3256 = 3,
-	TLV320ADC3001 = 4,
 };
 
 #define AIC3256_IRQ_HEADSET_DETECT      0
@@ -226,7 +225,6 @@ struct aic3xxx_gpio_setup {
 	u8 value;
 };
 struct aic3xxx_pdata {
-	int id;
 	unsigned int audio_mclk1;
 	unsigned int audio_mclk2;
 	/* whether AIC3262 interrupts the host AP on 
@@ -343,5 +341,6 @@ int aic3xxx_i2c_read_device(struct aic3xxx *aic3xxx,u8 offset,
 int aic3xxx_i2c_write_device(struct aic3xxx *aic3xxx,u8 offset,
                                                 const void *dest,int count);
 
-#endif /* End of __MFD_AIC3256_CORE_H__ */
+void *aic3xxx_get_i2c_dev(struct aic3xxx *aic3xxx);
 
+#endif /* End of __MFD_AIC3256_CORE_H__ */

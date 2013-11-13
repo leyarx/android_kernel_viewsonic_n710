@@ -1,18 +1,3 @@
-/*
- * linux/sound/soc/codecs/aic3xxx/aic3xxx_cfw_ops.c
- *
- * Copyright (C) 2011 Texas Instruments Inc.,
- *
- * This package is free software; you can redistribute it and/or modify
- * it under the terms of the GNU General Public License version 2 as
- * published by the Free Software Foundation.
- *
- * THIS PACKAGE IS PROVIDED ``AS IS'' AND WITHOUT ANY EXPRESS OR
- * IMPLIED WARRANTIES, INCLUDING, WITHOUT LIMITATION, THE IMPLIED
- * WARRANTIES OF MERCHANTIBILITY AND FITNESS FOR A PARTICULAR PURPOSE.
- *
- */
-
 #include <linux/module.h>
 #include <linux/delay.h>
 #include <sound/pcm.h>
@@ -41,12 +26,12 @@
  */
 #undef CFW_FW_IF_ID
 #define CFW_FW_IF_ID 0x3FA6D547
-static int aic3xxx_cfw_dlimage(struct cfw_state *ps, struct cfw_image *pim);
-static int aic3xxx_cfw_dlcfg(struct cfw_state *ps, struct cfw_image *pim);
-static int aic3xxx_cfw_dlctl(struct cfw_state *ps, struct cfw_block *pb,
+static int aic3xxx_cfw_dlimage(struct cfw_state *ps, struct cfw_image * pim);
+static int aic3xxx_cfw_dlcfg(struct cfw_state *ps, struct cfw_image * pim);
+static int aic3xxx_cfw_dlctl(struct cfw_state *ps, struct cfw_block * pb,
 			     u32 mute_flags);
 
-static void aic3xxx_cfw_dlcmds(struct cfw_state *ps, struct cfw_block *pb);
+static void aic3xxx_cfw_dlcmds(struct cfw_state *ps, struct cfw_block * pb);
 static int aic3xxx_cfw_set_mode_id(struct cfw_state *ps);
 static int aic3xxx_cfw_mute(struct cfw_state *ps, int mute, u32 flags);
 static int aic3xxx_cfw_setmode_cfg_u(struct cfw_state *ps, int mode, int cfg);
@@ -61,27 +46,24 @@ static void aic3xxx_wait(struct cfw_state *ps, unsigned int reg, u8 mask,
 static void aic3xxx_set_bits(u8 *data, u8 mask, u8 val);
 static int aic3xxx_driver_init(struct cfw_state *ps);
 
-int aic3xxx_cfw_init(struct cfw_state *ps, const struct aic3xxx_codec_ops *ops,
-		     struct snd_soc_codec *codec)
+int aic3xxx_cfw_init(struct cfw_state *ps, struct aic3xxx_codec_ops *ops,
+		     void *ops_obj)
 {
 	ps->ops = ops;
-	ps->codec = codec;
+	ps->ops_obj = ops_obj;
 	ps->pjt = NULL;
 	mutex_init(&ps->mutex);
-
-	/* FIXME Need a special CONFIG flag to disable debug driver */
+    /* FIXME Need a special CONFIG flag to disable debug driver */
 	aic3xxx_driver_init(ps);
 	return 0;
 }
 
 int aic3xxx_cfw_lock(struct cfw_state *ps, int lock)
 {
-	if (lock){
+	if (lock)
 		mutex_lock(&ps->mutex);
-}
 	else
-		{
-		mutex_unlock(&ps->mutex);}
+		mutex_unlock(&ps->mutex);
 	return 0;
 }
 
@@ -100,7 +82,6 @@ int aic3xxx_cfw_setmode(struct cfw_state *ps, int mode)
 {
 	struct cfw_project *pjt;
 	int ret;
-
 	aic3xxx_cfw_lock(ps, 1);
 	pjt = ps->pjt;
 	if (pjt == NULL) {
@@ -115,7 +96,6 @@ int aic3xxx_cfw_setmode(struct cfw_state *ps, int mode)
 int aic3xxx_cfw_setcfg(struct cfw_state *ps, int cfg)
 {
 	int ret;
-
 	aic3xxx_cfw_lock(ps, 1);
 	ret = aic3xxx_cfw_setcfg_u(ps, cfg);
 	aic3xxx_cfw_lock(ps, 0);
@@ -151,7 +131,6 @@ static int aic3xxx_cfw_setcfg_u(struct cfw_state *ps, int cfg)
 int aic3xxx_cfw_setmode_cfg(struct cfw_state *ps, int mode, int cfg)
 {
 	int ret;
-
 	aic3xxx_cfw_lock(ps, 1);
 	ret = aic3xxx_cfw_setmode_cfg_u(ps, mode, cfg);
 	aic3xxx_cfw_lock(ps, 0);
@@ -165,11 +144,11 @@ static int aic3xxx_cfw_setmode_cfg_u(struct cfw_state *ps, int mode, int cfg)
 	int which = 0, ocndx;
 
 	if (pjt == NULL)
-		goto err;
+		return -1;
 	if ((mode < 0) || (mode >= pjt->nmode))
-		goto err;
+		return -1;
 	if (cfg < 0)
-		goto err;
+		return -1;
 	if (mode == ps->cur_mode)
 		return aic3xxx_cfw_setcfg_u(ps, cfg);
 
@@ -177,16 +156,16 @@ static int aic3xxx_cfw_setmode_cfg_u(struct cfw_state *ps, int mode, int cfg)
 	if (ps->cur_mode >= 0)
 		aic3xxx_cfw_dlcmds(ps, pjt->mode[ps->cur_mode]->exit);
 	pmode = pjt->mode[mode];
-	if (pjt->mode[mode]->pfw < pjt->npfw) { /* New mode uses miniDSP */
+	if (pjt->mode[mode]->pfw < pjt->npfw) {
+		/* New mode uses miniDSP */
 		struct cfw_image *im;
 		struct cfw_pfw *pfw = pjt->pfw[pmode->pfw];
 
 		/* Make sure cfg is valid and supported in this mode */
 		if (pfw->ncfg == 0 && cfg != 0)
-			goto err;
+			return -1;
 		if (cfg > 0 && cfg >= pfw->ncfg)
-			goto err;
-
+			return -1;
 		/*
 		 * Decisions about which miniDSP to stop/restart are taken
 		 * on the basis of sections present in the _base_ image
@@ -201,38 +180,34 @@ static int aic3xxx_cfw_setmode_cfg_u(struct cfw_state *ps, int mode, int cfg)
 			which |= AIC3XXX_COPS_MDSP_D;
 
 		if (pmode->pfw != ps->cur_pfw) {
-
 			/* New mode requires different PFW */
 			ps->cur_pfw = pmode->pfw;
 			ps->cur_ovly = 0;
 			ps->cur_cfg = 0;
 
-			which = ps->ops->stop(ps->codec, which);
+			which = ps->ops->stop(ps->ops_obj, which);
 			aic3xxx_cfw_dlimage(ps, im);
 			if (pmode->ovly && pmode->ovly < pfw->novly) {
-
 				/* New mode uses ovly */
-				ocndx = CFW_OCFG_NDX(pfw, pmode->ovly, cfg);
+				ocndx =
+				    CFW_OCFG_NDX(pfw, pmode->ovly, cfg);
 				aic3xxx_cfw_dlimage(ps,
 						    pfw->ovly_cfg[ocndx]);
 			} else if (pfw->ncfg > 0) {
-
 				/* new mode needs only a cfg change */
 				ocndx = CFW_OCFG_NDX(pfw, 0, cfg);
 				aic3xxx_cfw_dlimage(ps,
 						    pfw->ovly_cfg[ocndx]);
 			}
-			ps->ops->restore(ps->codec, which);
+			ps->ops->restore(ps->ops_obj, which);
 
 		} else if (pmode->ovly != ps->cur_ovly) {
-
 			/* New mode requires only an ovly change */
 			ocndx = CFW_OCFG_NDX(pfw, pmode->ovly, cfg);
-			which = ps->ops->stop(ps->codec, which);
+			which = ps->ops->stop(ps->ops_obj, which);
 			aic3xxx_cfw_dlimage(ps, pfw->ovly_cfg[ocndx]);
-			ps->ops->restore(ps->codec, which);
+			ps->ops->restore(ps->ops_obj, which);
 		} else if (pfw->ncfg > 0 && cfg != ps->cur_cfg) {
-
 			/* New mode requires only a cfg change */
 			ocndx = CFW_OCFG_NDX(pfw, pmode->ovly, cfg);
 			aic3xxx_cfw_dlcfg(ps, pfw->ovly_cfg[ocndx]);
@@ -244,33 +219,24 @@ static int aic3xxx_cfw_setmode_cfg_u(struct cfw_state *ps, int mode, int cfg)
 		aic3xxx_cfw_set_pll_u(ps, 0);
 
 	} else if (pjt->mode[mode]->pfw != 0xFF) {
-
 		/* Not bypass mode */
 		warn("Bad pfw setting detected (%d).  Max pfw=%d",
 		     pmode->pfw, pjt->npfw);
 	}
 	ps->cur_mode = mode;
 	aic3xxx_cfw_set_mode_id(ps);
-
 	/* Transition to netural mode */
 	aic3xxx_cfw_transition_u(ps, "NEUTRAL");
-
 	/* Apply entry sequence if present */
 	aic3xxx_cfw_dlcmds(ps, pmode->entry);
-
-	DBG("setmode_cfg: DONE (mode=%d pfw=%d ovly=%d cfg=%d)\n",
+	DBG("setmode_cfg: DONE (mode=%d pfw=%d ovly=%d cfg=%d)",
 	    ps->cur_mode, ps->cur_pfw, ps->cur_ovly, ps->cur_cfg);
 	return 0;
-
-err:
-	DBG("Failed to set firmware mode\n");
-	return -EINVAL;
 }
 
 int aic3xxx_cfw_transition(struct cfw_state *ps, char *ttype)
 {
 	int ret;
-
 	aic3xxx_cfw_lock(ps, 1);
 	ret = aic3xxx_cfw_transition_u(ps, ttype);
 	aic3xxx_cfw_lock(ps, 0);
@@ -282,11 +248,11 @@ static int aic3xxx_cfw_transition_u(struct cfw_state *ps, char *ttype)
 	int i;
 
 	if (ps->pjt == NULL)
-		return -EINVAL;
+		return -1;
 	for (i = 0; i < CFW_TRN_N; ++i) {
 		if (!strcasecmp(ttype, cfw_transition_id[i])) {
 			struct cfw_transition *pt = ps->pjt->transition[i];
-			DBG("Sending transition %s[%d]\n", ttype, i);
+			DBG("Sending transition %s[%d]", ttype, i);
 			if (pt)
 				aic3xxx_cfw_dlcmds(ps, pt->block);
 			return 0;
@@ -299,7 +265,6 @@ static int aic3xxx_cfw_transition_u(struct cfw_state *ps, char *ttype)
 int aic3xxx_cfw_set_pll(struct cfw_state *ps, int asi)
 {
 	int ret;
-
 	aic3xxx_cfw_lock(ps, 1);
 	ret = aic3xxx_cfw_set_pll_u(ps, asi);
 	aic3xxx_cfw_lock(ps, 0);
@@ -310,14 +275,13 @@ static int aic3xxx_cfw_set_pll_u(struct cfw_state *ps, int asi)
 {
 	struct cfw_project *pjt = ps->pjt;
 	int pll_id;
-
 	if (pjt == NULL)
-		return -EINVAL;
+		return -1;
 	if (ps->cur_mode < 0)
 		return -EINVAL;
 	pll_id = pjt->mode[ps->cur_mode]->pll;
 	if (ps->cur_pll != pll_id) {
-		DBG("Re-configuring PLL: %s==>%d\n", pjt->pll[pll_id]->name,
+		DBG("Re-configuring PLL: %s==>%d", pjt->pll[pll_id]->name,
 		    pll_id);
 		aic3xxx_cfw_dlcmds(ps, pjt->pll[pll_id]->seq);
 		ps->cur_pll = pll_id;
@@ -328,7 +292,6 @@ static int aic3xxx_cfw_set_pll_u(struct cfw_state *ps, int asi)
 int aic3xxx_cfw_control(struct cfw_state *ps, char *cname, int param)
 {
 	int ret;
-
 	aic3xxx_cfw_lock(ps, 1);
 	ret = aic3xxx_cfw_control_u(ps, cname, param);
 	aic3xxx_cfw_lock(ps, 0);
@@ -350,10 +313,12 @@ static int aic3xxx_cfw_control_u(struct cfw_state *ps, char *cname, int param)
 		if (strcasecmp(cname, pfw->ctrl[i]->name))
 			continue;
 		if (param < 0 || param > pc->imax) {
-			warn("Parameter out of range\n");
+			warn("Parameter %d out of range "
+					"for %s valid:[0,%d]",
+					param, cname, pc->imax);
 			return -EINVAL;
 		}
-		DBG("Sending control %s[%d]\n", cname, param);
+		DBG("Sending control %s[%d]", cname, param);
 		pc->icur = param;
 		aic3xxx_cfw_dlctl(ps, pc->output[param], pc->mute_flags);
 		return 0;
@@ -420,7 +385,7 @@ static void aic3xxx_cfw_op(struct cfw_state *ps, unsigned char *var,
 	}
 }
 
-static void aic3xxx_cfw_dlcmds(struct cfw_state *ps, struct cfw_block *pb)
+static void aic3xxx_cfw_dlcmds(struct cfw_state *ps, struct cfw_block * pb)
 {
 	int pc = 0, cond = 0;
 	unsigned char var[256];
@@ -434,7 +399,7 @@ static void aic3xxx_cfw_dlcmds(struct cfw_state *ps, struct cfw_block *pb)
 			cond = 0;
 		switch (c->cid) {
 		case 0 ... (CFW_CMD_NOP - 1):
-			ps->ops->reg_write(ps->codec, c->reg.bpod,
+			ps->ops->reg_write(ps->ops_obj, c->reg.bpod,
 					   c->reg.data);
 			pc += 1;
 			break;
@@ -446,7 +411,7 @@ static void aic3xxx_cfw_dlcmds(struct cfw_state *ps, struct cfw_block *pb)
 			pc += 1;
 			break;
 		case CFW_CMD_UPDTBITS:
-			ps->ops->set_bits(ps->codec, c[1].reg.bpod,
+			ps->ops->set_bits(ps->ops_obj, c[1].reg.bpod,
 					  c->bitop.mask, c[1].reg.data);
 			pc += 2;
 			break;
@@ -457,18 +422,18 @@ static void aic3xxx_cfw_dlcmds(struct cfw_state *ps, struct cfw_block *pb)
 			break;
 		case CFW_CMD_LOCK:
 			if (c->delay.delay)
-				ps->ops->lock(ps->codec);
+				ps->ops->lock(ps->ops_obj);
 			else
-				ps->ops->unlock(ps->codec);
+				ps->ops->unlock(ps->ops_obj);
 			pc += 1;
 			break;
 		case CFW_CMD_BURST:
-			ps->ops->bulk_write(ps->codec, c[1].reg.bpod,
+			ps->ops->bulk_write(ps->ops_obj, c[1].reg.bpod,
 					    c->bhdr.len, c[1].burst.data);
 			pc += CFW_CMD_BURST_LEN(c->bhdr.len);
 			break;
 		case CFW_CMD_RBURST:
-			ps->ops->bulk_read(ps->codec, c[1].reg.bpod,
+			ps->ops->bulk_read(ps->ops_obj, c[1].reg.bpod,
 					    c->bhdr.len, c[1].burst.data);
 			pc += CFW_CMD_BURST_LEN(c->bhdr.len);
 			break;
@@ -485,7 +450,7 @@ static void aic3xxx_cfw_dlcmds(struct cfw_state *ps, struct cfw_block *pb)
 				pc += 1;
 			} else {
 				u8 data;
-				data = ps->ops->reg_read(ps->codec,
+				data = ps->ops->reg_read(ps->ops_obj,
 							c[1].reg.bpod);
 				aic3xxx_set_bits(&var[c->ldst.dvar],
 						 c->ldst.mask, data);
@@ -494,12 +459,12 @@ static void aic3xxx_cfw_dlcmds(struct cfw_state *ps, struct cfw_block *pb)
 			break;
 		case CFW_CMD_STORE_VAR:
 			if (c->ldst.svar != c->ldst.dvar)
-				ps->ops->set_bits(ps->codec,
+				ps->ops->set_bits(ps->ops_obj,
 						  c[1].reg.bpod,
 						  var[c->ldst.dvar],
 						  var[c->ldst.svar]);
 			else
-				ps->ops->set_bits(ps->codec,
+				ps->ops->set_bits(ps->ops_obj,
 						  c[1].reg.bpod,
 						  c->ldst.mask,
 						  var[c->ldst.svar]);
@@ -551,7 +516,7 @@ static void aic3xxx_cfw_dlcmds(struct cfw_state *ps, struct cfw_block *pb)
 static void aic3xxx_wait(struct cfw_state *ps, unsigned int reg, u8 mask,
 			 u8 data)
 {
-	while ((ps->ops->reg_read(ps->codec, reg) & mask) != data)
+	while ((ps->ops->reg_read(ps->ops_obj, reg) & mask) != data)
 		mdelay(2);
 }
 
@@ -584,12 +549,11 @@ static const struct {
 		.buf_b = CFW_BLOCK_D_B2_COEF
 	},
 };
-static int aic3xxx_cfw_dlctl(struct cfw_state *ps, struct cfw_block *pb,
+static int aic3xxx_cfw_dlctl(struct cfw_state *ps, struct cfw_block * pb,
 			     u32 mute_flags)
 {
 	int i, btype = pb->type;
-	int run_state = ps->ops->lock(ps->codec);
-
+	int run_state = ps->ops->lock(ps->ops_obj);
 	DBG("Download CTL");
 	for (i = 0; i < sizeof(csecs) / sizeof(csecs[0]); ++i) {
 		if (csecs[i].buf_a != btype && csecs[i].buf_b != btype)
@@ -599,22 +563,22 @@ static int aic3xxx_cfw_dlctl(struct cfw_state *ps, struct cfw_block *pb,
 		if (run_state & csecs[i].mdsp) {
 			DBG("\tDownload again to make sure it reaches B");
 			aic3xxx_cfw_mute(ps, 1, run_state & mute_flags);
-			ps->ops->bswap(ps->codec, csecs[i].swap);
+			ps->ops->bswap(ps->ops_obj, csecs[i].swap);
 			aic3xxx_cfw_mute(ps, 0, run_state & mute_flags);
 			aic3xxx_cfw_dlcmds(ps, pb);
 		}
 		break;
 	}
-	ps->ops->unlock(ps->codec);
+	ps->ops->unlock(ps->ops_obj);
 	return 0;
 }
 
-static int aic3xxx_cfw_dlcfg(struct cfw_state *ps, struct cfw_image *pim)
+static int aic3xxx_cfw_dlcfg(struct cfw_state *ps, struct cfw_image * pim)
 {
 	int i, run_state, swap;
 
-	DBG("Download CFG %s\n", pim->name);
-	run_state = ps->ops->lock(ps->codec);
+	DBG("Download CFG %s", pim->name);
+	run_state = ps->ops->lock(ps->ops_obj);
 	swap = 0;
 	for (i = 0; i < sizeof(csecs) / sizeof(csecs[0]); ++i) {
 		if (!pim->block[csecs[i].buf_a])
@@ -626,7 +590,7 @@ static int aic3xxx_cfw_dlcfg(struct cfw_state *ps, struct cfw_image *pim)
 	}
 	if (swap) {
 		aic3xxx_cfw_mute(ps, 1, run_state & pim->mute_flags);
-		ps->ops->bswap(ps->codec, swap);
+		ps->ops->bswap(ps->ops_obj, swap);
 		aic3xxx_cfw_mute(ps, 0, run_state & pim->mute_flags);
 		for (i = 0; i < sizeof(csecs) / sizeof(csecs[0]); ++i) {
 			if (!pim->block[csecs[i].buf_a])
@@ -637,17 +601,17 @@ static int aic3xxx_cfw_dlcfg(struct cfw_state *ps, struct cfw_image *pim)
 			aic3xxx_cfw_dlcmds(ps, pim->block[csecs[i].buf_b]);
 		}
 	}
-	ps->ops->unlock(ps->codec);
+	ps->ops->unlock(ps->ops_obj);
 	return 0;
 }
 
-static int aic3xxx_cfw_dlimage(struct cfw_state *ps, struct cfw_image *pim)
+static int aic3xxx_cfw_dlimage(struct cfw_state *ps, struct cfw_image * pim)
 {
 	int i;
 
 	if (!pim)
 		return 0;
-	DBG("Download IMAGE %s\n", pim->name);
+	DBG("Download IMAGE %s", pim->name);
 	for (i = 0; i < CFW_BLOCK_N; ++i)
 		aic3xxx_cfw_dlcmds(ps, pim->block[i]);
 	return 0;
@@ -665,35 +629,30 @@ static int aic3xxx_cfw_mute(struct cfw_state *ps, int mute, u32 flags)
 	return 0;
 }
 
-static inline void *aic3xxx_cfw_ndx2ptr(void *p, u8 *base)
-{
-	return &base[(int)p];
-}
-static inline char *aic3xxx_cfw_desc(void *p, u8 *base)
-{
-	if (p)
-		return aic3xxx_cfw_ndx2ptr(p, base);
-	return NULL;
-}
+#   define FW_NDX2PTR(x, b) do {                        \
+		x = (void *)((u8 *)(b) + ((int)(x)));   \
+	} while (0)
+#   define FW_UP_DESC(d, b) do {                        \
+		if (d)                                  \
+			FW_NDX2PTR(d, b);               \
+	} while (0)
 
 static void aic3xxx_cfw_unpickle_image(struct cfw_image *im, void *p)
 {
 	int i;
-
-	im->desc = aic3xxx_cfw_desc(im->desc, p);
+	FW_UP_DESC(im->desc, p);
 	for (i = 0; i < CFW_BLOCK_N; ++i)
 		if (im->block[i])
-			im->block[i] = aic3xxx_cfw_ndx2ptr(im->block[i], p);
+			FW_NDX2PTR(im->block[i], p);
 }
 
 static void aic3xxx_cfw_unpickle_control(struct cfw_control *ct, void *p)
 {
 	int i;
-
-	ct->output = aic3xxx_cfw_ndx2ptr(ct->output, p);
-	ct->desc = aic3xxx_cfw_desc(ct->desc, p);
+	FW_NDX2PTR(ct->output, p);
+	FW_UP_DESC(ct->desc, p);
 	for (i = 0; i <= ct->imax; ++i)
-		ct->output[i] = aic3xxx_cfw_ndx2ptr(ct->output[i], p);
+		FW_NDX2PTR(ct->output[i], p);
 }
 
 static unsigned int crc32(unsigned int *pdata, int n)
@@ -748,13 +707,13 @@ static int crc_chk(void *p, int n)
 	u32 crc = pjt->cksum, crc_comp;
 
 	pjt->cksum = 0;
-	DBG("Entering crc %d\n", n);
+	DBG("Entering crc %d", n);
 	crc_comp = crc32(p, n);
 	if (crc_comp != crc) {
-		DBG("CRC mismatch 0x%08X != 0x%08X\n", crc, crc_comp);
+		DBG("CRC mismatch 0x%08X != 0x%08X", crc, crc_comp);
 		return 0;
 	}
-	DBG("CRC pass\n");
+	DBG("CRC pass");
 	pjt->cksum = crc;
 	return 1;
 }
@@ -766,75 +725,69 @@ static struct cfw_project *aic3xxx_cfw_unpickle(void *p, int n)
 
 	if (pjt->magic != CFW_FW_MAGIC || pjt->size != n ||
 	    pjt->if_id != CFW_FW_IF_ID || !crc_chk(p, n)) {
-		error("Version mismatch: unable to load firmware\n");
+		error("magic:0x%08X!=0x%08X || size:%d!=%d || "
+		      "version:0x%08X!=0x%08X || cksum_fail",
+		      pjt->magic, CFW_FW_MAGIC, pjt->size, n,
+		      pjt->if_id, CFW_FW_IF_ID);
 		return NULL;
 	}
 	DBG("Loaded firmware inside unpickle\n");
 
-	pjt->desc = aic3xxx_cfw_desc(pjt->desc, p);
-	pjt->transition = aic3xxx_cfw_ndx2ptr(pjt->transition, p);
+	FW_UP_DESC(pjt->desc, p);
+	FW_NDX2PTR(pjt->transition, p);
 	for (i = 0; i < CFW_TRN_N; i++) {
 		if (!pjt->transition[i])
 			continue;
-		pjt->transition[i] = aic3xxx_cfw_ndx2ptr(pjt->transition[i], p);
-		pjt->transition[i]->desc = aic3xxx_cfw_desc(
-						pjt->transition[i]->desc, p);
-		pjt->transition[i]->block = aic3xxx_cfw_ndx2ptr(
-						pjt->transition[i]->block, p);
+		FW_NDX2PTR(pjt->transition[i], p);
+		FW_UP_DESC(pjt->transition[i]->desc, p);
+		FW_NDX2PTR(pjt->transition[i]->block, p);
 	}
-	pjt->pll = aic3xxx_cfw_ndx2ptr(pjt->pll, p);
+	FW_NDX2PTR(pjt->pll, p);
 	for (i = 0; i < pjt->npll; i++) {
-		pjt->pll[i] = aic3xxx_cfw_ndx2ptr(pjt->pll[i], p);
-		pjt->pll[i]->desc = aic3xxx_cfw_desc(pjt->pll[i]->desc, p);
-		pjt->pll[i]->seq = aic3xxx_cfw_ndx2ptr(pjt->pll[i]->seq, p);
+		FW_NDX2PTR(pjt->pll[i], p);
+		FW_UP_DESC(pjt->pll[i]->desc, p);
+		FW_NDX2PTR(pjt->pll[i]->seq, p);
 	}
 
-	pjt->pfw = aic3xxx_cfw_ndx2ptr(pjt->pfw, p);
+	FW_NDX2PTR(pjt->pfw, p);
 	for (i = 0; i < pjt->npfw; i++) {
 		DBG("loading pfw %d\n", i);
-		pjt->pfw[i] = aic3xxx_cfw_ndx2ptr(pjt->pfw[i], p);
-		pjt->pfw[i]->desc = aic3xxx_cfw_desc(pjt->pfw[i]->desc, p);
+		FW_NDX2PTR(pjt->pfw[i], p);
+		FW_UP_DESC(pjt->pfw[i]->desc, p);
 		if (pjt->pfw[i]->base) {
-			pjt->pfw[i]->base = aic3xxx_cfw_ndx2ptr(
-							pjt->pfw[i]->base, p);
+			FW_NDX2PTR(pjt->pfw[i]->base, p);
 			aic3xxx_cfw_unpickle_image(pjt->pfw[i]->base, p);
 		}
-		pjt->pfw[i]->ovly_cfg = aic3xxx_cfw_ndx2ptr(
-						pjt->pfw[i]->ovly_cfg, p);
+		FW_NDX2PTR(pjt->pfw[i]->ovly_cfg, p);
 		for (j = 0; j < pjt->pfw[i]->novly * pjt->pfw[i]->ncfg; ++j) {
-			pjt->pfw[i]->ovly_cfg[j] = aic3xxx_cfw_ndx2ptr(
-						pjt->pfw[i]->ovly_cfg[j], p);
+			FW_NDX2PTR(pjt->pfw[i]->ovly_cfg[j], p);
 			aic3xxx_cfw_unpickle_image(pjt->pfw[i]->ovly_cfg[j], p);
 		}
 		if (pjt->pfw[i]->nctrl)
-			pjt->pfw[i]->ctrl = aic3xxx_cfw_ndx2ptr(
-							pjt->pfw[i]->ctrl, p);
+			FW_NDX2PTR(pjt->pfw[i]->ctrl, p);
 		for (j = 0; j < pjt->pfw[i]->nctrl; ++j) {
-			pjt->pfw[i]->ctrl[j] = aic3xxx_cfw_ndx2ptr(
-						pjt->pfw[i]->ctrl[j], p);
+			FW_NDX2PTR(pjt->pfw[i]->ctrl[j], p);
 			aic3xxx_cfw_unpickle_control(pjt->pfw[i]->ctrl[j], p);
 		}
 	}
 
 	DBG("loaded pfw's\n");
-	pjt->mode = aic3xxx_cfw_ndx2ptr(pjt->mode, p);
+	FW_NDX2PTR(pjt->mode, p);
 	for (i = 0; i < pjt->nmode; i++) {
-		pjt->mode[i] = aic3xxx_cfw_ndx2ptr(pjt->mode[i], p);
-		pjt->mode[i]->desc = aic3xxx_cfw_desc(pjt->mode[i]->desc, p);
+		FW_NDX2PTR(pjt->mode[i], p);
+		FW_UP_DESC(pjt->mode[i]->desc, p);
 		if (pjt->mode[i]->entry)
-			pjt->mode[i]->entry = aic3xxx_cfw_ndx2ptr(
-						pjt->mode[i]->entry, p);
+			FW_NDX2PTR(pjt->mode[i]->entry, p);
 		if (pjt->mode[i]->exit)
-			pjt->mode[i]->exit = aic3xxx_cfw_ndx2ptr(
-						pjt->mode[i]->exit, p);
+			FW_NDX2PTR(pjt->mode[i]->exit, p);
 	}
 	if (pjt->asoc_toc)
-		pjt->asoc_toc = aic3xxx_cfw_ndx2ptr(pjt->asoc_toc, p);
+		FW_NDX2PTR(pjt->asoc_toc, p);
 	else {
 		warn("asoc_toc not defined.  FW version mismatch?");
 		return NULL;
 	}
-	DBG("loaded modes\n");
+	DBG("loaded modes");
 	return pjt;
 }
 static int aic3xxx_cfw_set_mode_id(struct cfw_state *ps)
@@ -849,7 +802,7 @@ static int aic3xxx_cfw_set_mode_id(struct cfw_state *ps)
 			return 0;
 		}
 	}
-	DBG("Unknown mode,cfg combination [%d,%d]\n", ps->cur_mode,
+	DBG("Unknown mode,cfg combination [%d,%d]", ps->cur_mode,
 	    ps->cur_cfg);
 	return -1;
 }
@@ -864,7 +817,7 @@ static int aic3xxx_get_control(struct snd_kcontrol *kcontrol,
 	int i;
 
 	if (ps->cur_pfw >= ps->pjt->npfw) {
-		DBG("Not in MiniDSP mode\n");
+		DBG("Not in MiniDSP mode");
 		return 0;
 	}
 	pfw = ps->pjt->pfw[ps->cur_pfw];
@@ -896,7 +849,7 @@ static int aic3xxx_info_control(struct snd_kcontrol *kcontrol,
 	int i;
 
 	if (ps->cur_pfw >= ps->pjt->npfw) {
-		DBG("Not in MiniDSP mode\n");
+		DBG("Not in MiniDSP mode");
 		return 0;
 	}
 	pfw = ps->pjt->pfw[ps->cur_pfw];
@@ -949,7 +902,7 @@ int aic3xxx_cfw_add_controls(struct snd_soc_codec *codec, struct cfw_state *ps)
 			generic_control->info = aic3xxx_info_control;
 			generic_control->iface = SNDRV_CTL_ELEM_IFACE_MIXER;
 			snd_soc_add_controls(codec, generic_control, 1);
-			DBG("Added control %s\n", pc->name);
+			DBG("Added control %s", pc->name);
 		}
 	}
 	return 0;
@@ -1034,13 +987,11 @@ mem_err:
 
 }
 
-#if defined(CONFIG_AIC3111_CODEC) || defined(CONFIG_AIC3111_CORE)
-
+#if defined(CONFIG_AIC3111_CODEC)
 #	define AIC3XXX_CFW_DEVICE "aic3111_cfw"
-#elif defined(CONFIG_MFD_AIC3256) || defined(CONFIG_AIC3256_CORE)
-
+#elif defined(CONFIG_AIC3256_CODEC)
 #	define AIC3XXX_CFW_DEVICE "aic3256_cfw"
-#elif defined(CONFIG_AIC3262_CODEC) || defined(CONFIG_AIC3262_CORE)
+#elif defined(CONFIG_AIC3262_CODEC)
 #	define AIC3XXX_CFW_DEVICE "aic3262_cfw"
 #else
 #	define AIC3XXX_CFW_DEVICE "aic3xxx_cfw"
@@ -1063,7 +1014,7 @@ static int aic3xxx_cfw_release(struct inode *in, struct file *filp)
 	ps->is_open--;
 	return ps->is_open;
 }
-static long aic3xxx_cfw_ioctl(struct file *filp,
+static int aic3xxx_cfw_ioctl(struct file *filp,
 			unsigned int cmd, unsigned long arg)
 {
 	return 0;
@@ -1078,7 +1029,9 @@ static ssize_t aic3xxx_cfw_rw(struct file *filp, char __user *buf,
 		goto err;
 	}
 	if (count != CFW_BLOCK_SIZE(kbuf->ncmds)) {
-		warn("dev_rw: Bad packet received\n");
+		int n = kbuf->ncmds;
+		warn("dev_rw: Bad packet received count=%d ncmds=%d sz=%d",
+					count, n, CFW_BLOCK_SIZE(kbuf->ncmds));
 		goto err;
 	}
 	aic3xxx_cfw_dlcmds(ps, kbuf);
@@ -1098,8 +1051,7 @@ static const struct file_operations aic3xxx_cfw_fops = {
 	.open = aic3xxx_cfw_open,
 	.release = aic3xxx_cfw_release,
 	.read = aic3xxx_cfw_rw,
-	.write = (ssize_t (*)(struct file *filp, const char __user *buf,
-			size_t count, loff_t *offset))aic3xxx_cfw_rw,
+	.write = aic3xxx_cfw_rw,
 	.unlocked_ioctl = aic3xxx_cfw_ioctl,
 };
 static int aic3xxx_driver_init(struct cfw_state *ps)
@@ -1133,4 +1085,3 @@ static int aic3xxx_driver_init(struct cfw_state *ps)
 MODULE_DESCRIPTION("ASoC tlv320aic3xxx codec driver firmware functions");
 MODULE_AUTHOR("Hari Rajagopala <harik@ti.com>");
 MODULE_LICENSE("GPL");
-
