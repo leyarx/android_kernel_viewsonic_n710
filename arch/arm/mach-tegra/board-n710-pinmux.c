@@ -1,6 +1,8 @@
 /*
  * arch/arm/mach-tegra/board-n710-pinmux.c
  *
+ * Copyright (c) 2013, Yaroslav Levandovskiy <leyarx@gmail.com>
+ *
  * Copyright (C) 2012 NVIDIA Corporation
  *
  * This software is licensed under the terms of the GNU General Public
@@ -302,7 +304,7 @@ static __initdata struct tegra_pingroup_config n710_pinmux_common[] = {
 	DEFAULT_PINMUX(KB_ROW8,         KBC,             NORMAL,    NORMAL,     OUTPUT),
 
 	/* CAMERA */
-	DEFAULT_PINMUX(CAM_MCLK,        VI_ALT2,         PULL_UP, NORMAL,     INPUT), //PULL_DOWN
+	DEFAULT_PINMUX(CAM_MCLK,        VI_ALT2,         PULL_UP, 	NORMAL,     INPUT), //PULL_DOWN
 	DEFAULT_PINMUX(GPIO_PCC1,       RSVD2,           NORMAL,    NORMAL,     INPUT), //RSVD1
 	DEFAULT_PINMUX(GPIO_PBB0,       RSVD2,           NORMAL,    NORMAL,     INPUT), //RSVD1
 	DEFAULT_PINMUX(GPIO_PBB3,       VGP3,            NORMAL,    NORMAL,     INPUT),

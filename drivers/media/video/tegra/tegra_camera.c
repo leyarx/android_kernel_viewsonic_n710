@@ -113,7 +113,8 @@ static int tegra_camera_enable_emc(struct tegra_camera_dev *dev)
 #ifdef CONFIG_ARCH_TEGRA_2x_SOC
 	clk_set_rate(dev->emc_clk, 300000000);
 #else
-	clk_set_rate(dev->emc_clk, 150000000);
+//	clk_set_rate(dev->emc_clk, 150000000);
+	clk_set_rate(dev->emc_clk, 667000000);
 #endif
 	return 0;
 }

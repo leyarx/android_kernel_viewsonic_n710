@@ -1,6 +1,8 @@
 /*
  * Copyright (C) 2011 NVIDIA, Inc.
  *
+ * Copyright (c) 2013, Yaroslav Levandovskiy <leyarx@gmail.com>
+ *
  * This program is free software; you can redistribute it and/or modify
  * it under the terms of the GNU General Public License version 2 as
  * published by the Free Software Foundation.
@@ -751,6 +753,45 @@ static const struct tegra_emc_table Micron_Elpida_1GB_ddr3_667Mhz_kh_sdmmc4_x8_1
 #include "gpio-names.h"
 int n710_emc_init(void)
 {
+	int ret=0;
+	int mem_bootstrap_ad4=0,mem_bootstrap_ad5=0;
+	#define MEMORY_BOOSTRAP_PIN_AD4 TEGRA_GPIO_PG4
+	#define MEMORY_BOOSTRAP_PIN_AD5 TEGRA_GPIO_PG5
+
+	tegra_gpio_enable( MEMORY_BOOSTRAP_PIN_AD4);
+       ret = gpio_request( MEMORY_BOOSTRAP_PIN_AD4, "memory_bootstrap_ad4");
+	if (ret < 0) {
+		printk("keenhi_emc_init: request MEMORY_BOOSTRAP_PIN_AD4 failed\n");
+		WARN_ON(1);
+		goto err_handle;
+	}
+
+	ret= gpio_direction_input(MEMORY_BOOSTRAP_PIN_AD4);
+	if (ret < 0) {
+		printk("keenhi_emc_init: failed to configure MEMORY_BOOSTRAP_PIN_AD4\n");
+		WARN_ON(1);
+		goto err_handle;
+	}
+	mem_bootstrap_ad4=gpio_get_value(MEMORY_BOOSTRAP_PIN_AD4);
+
+	tegra_gpio_enable( MEMORY_BOOSTRAP_PIN_AD5);
+       ret = gpio_request( MEMORY_BOOSTRAP_PIN_AD5, "memory_bootstrap_ad5");
+	if (ret < 0) {
+		printk("keenhi_emc_init: request MEMORY_BOOSTRAP_PIN_AD5 failed\n");
+		WARN_ON(1);
+		goto err_handle;
+	}
+
+	ret= gpio_direction_input(MEMORY_BOOSTRAP_PIN_AD5);
+	if (ret < 0) {
+		printk("keenhi_emc_init: failed to configure MEMORY_BOOSTRAP_PIN_AD4\n");
+		WARN_ON(1);
+		goto err_handle;
+	}
+	mem_bootstrap_ad5=gpio_get_value(MEMORY_BOOSTRAP_PIN_AD5);
+
+	printk("keenhi_emc_init:mem_bootstrap_ad4=%u mem_bootstrap_ad5=%u \n",mem_bootstrap_ad4,mem_bootstrap_ad5);
+err_handle:
 	tegra_init_emc(Micron_Elpida_1GB_ddr3_667Mhz_kh_sdmmc4_x8_12M_0704,
 			ARRAY_SIZE(Micron_Elpida_1GB_ddr3_667Mhz_kh_sdmmc4_x8_12M_0704));
 	printk("n710_emc_init:Micron_Elpida_1GB_ddr3_667Mhz_kh_sdmmc4_x8_12M_0704\n");

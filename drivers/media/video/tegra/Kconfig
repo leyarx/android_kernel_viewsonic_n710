@@ -95,3 +95,9 @@ config VIDEO_AD5820
         ---help---
           This is a driver for the AD5820 focuser
           for use with the tegra isp.
+
+config SOC_CAMERA_HM2057
+		tristate "HM2057 camera support"
+		depends on I2C && ARCH_TEGRA
+		---help---
+			This is a HM2057 camera driver.

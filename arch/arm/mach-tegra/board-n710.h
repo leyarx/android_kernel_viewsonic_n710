@@ -1,6 +1,8 @@
 /*
  * arch/arm/mach-tegra/board-n720.h
  *
+ * Copyright (c) 2013, Yaroslav Levandovskiy <leyarx@gmail.com>
+ *
  * Copyright (c) 2012, NVIDIA Corporation.
  *
  * This program is free software; you can redistribute it and/or modify
@@ -41,12 +43,10 @@
 #define MAX77663_GPIO_BASE	TEGRA_NR_GPIOS
 #define MAX77663_GPIO_END	(MAX77663_GPIO_BASE + MAX77663_GPIO_NR)
 
-/* CAMERA RELATED GPIOs on N710 */
-#define CAM2_RST_GPIO		TEGRA_GPIO_PBB4
-#define CAM2_POWER_DWN_GPIO	TEGRA_GPIO_PBB6
 /* Audio-related GPIOs */
 #define TEGRA_GPIO_SPKR_EN			TEGRA_GPIO_PB1
 #define TEGRA_GPIO_HP_DET			TEGRA_GPIO_PW2
+
 /* Tegra Modem related GPIOs */
 #define TEGRA_GPIO_W_DISABLE		TEGRA_GPIO_PDD7
 #define TEGRA_GPIO_MODEM_RSVD1		TEGRA_GPIO_PV0

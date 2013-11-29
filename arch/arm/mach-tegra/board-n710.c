@@ -1,6 +1,8 @@
 /*
  * arch/arm/mach-tegra/board-n710.c
  *
+ * Copyright (c) 2013, Yaroslav Levandovskiy <leyarx@gmail.com>
+ *
  * Copyright (c) 2012, NVIDIA Corporation.
  *
  * This program is free software; you can redistribute it and/or modify
@@ -616,6 +618,7 @@ static struct i2c_board_info novatek_i2c_devices[] = {
 
 static int novatek_touch_init(void)
 {
+#if defined(CONFIG_TOUCHSCREEN_NOVATEK)
 	tegra_gpio_enable(TOUCH_GPIO_INT); //TEGRA_GPIO_PH4
 	tegra_gpio_enable(TOUCH_GPIO_RST); //TEGRA_GPIO_PH6
 
@@ -625,7 +628,6 @@ static int novatek_touch_init(void)
 	gpio_request(TOUCH_GPIO_RST, "tp_rst");
 	gpio_direction_output(TOUCH_GPIO_RST, 0); //TEGRA_GPIO_PG5
 
-#if defined(CONFIG_TOUCHSCREEN_NOVATEK)
 	i2c_register_board_info(1, novatek_i2c_devices, 1);
 #endif
 	return 0;
